@@ -39,10 +39,11 @@ export function renderTableRows(rows: string[][], preferences: OutputPreferences
         row,
         preferences,
       }))
+      .map((row) => appendPresetRowSuffix(row, preferences))
       .filter(Boolean)
       .join('\n')
   } catch {
-    return renderSimpleRows(displayRows, preferences)
+    return renderSimpleRows(displayRows, preferences, preferences.tableRenderMode !== 'dsl')
   }
 }
 
@@ -213,11 +214,17 @@ function renderPairs(
   customKeyValueSeparator: string,
 ): string {
   const pairSeparator = customPairSeparator || resolvePairSeparator(context.preferences)
+  const firstPairSeparator = context.preferences.tableRenderMode === 'keyValue' && !customPairSeparator
+    ? resolveFirstPairSeparator(context.preferences) || pairSeparator
+    : pairSeparator
 
-  return resolveIndexes(selector, context.headers)
+  return joinItems(
+    resolveIndexes(selector, context.headers)
     .map((index) => formatKeyValue(index, context, customKeyValueSeparator))
-    .filter(Boolean)
-    .join(pairSeparator)
+    .filter(Boolean),
+    pairSeparator,
+    firstPairSeparator,
+  )
 }
 
 function formatKeyValue(index: number, context: RowContext, customKeyValueSeparator = ''): string {
@@ -285,9 +292,10 @@ function resolveFirstIndex(selector: string, headers: string[]): number | null {
   return insensitiveIndex >= 0 ? insensitiveIndex : null
 }
 
-function renderSimpleRows(rows: string[][], preferences: OutputPreferences): string {
+function renderSimpleRows(rows: string[][], preferences: OutputPreferences, appendRowSuffix = true): string {
   return rows
     .map((row) => joinColumns(row, resolveSimpleSeparator(preferences)).trim())
+    .map((row) => appendRowSuffix ? appendPresetRowSuffix(row, preferences) : row)
     .filter(Boolean)
     .join('\n')
 }
@@ -300,8 +308,24 @@ function resolvePairSeparator(preferences: OutputPreferences): string {
   return decodeEscapes(preferences.tablePairSeparator)
 }
 
+function resolveFirstPairSeparator(preferences: OutputPreferences): string {
+  return decodeEscapes(preferences.tableFirstPairSeparator)
+}
+
 function resolveKeyValueSeparator(preferences: OutputPreferences): string {
   return decodeEscapes(preferences.tableKeyValueSeparator)
+}
+
+function resolveRowSuffix(preferences: OutputPreferences): string {
+  return decodeEscapes(preferences.tableRowSuffix)
+}
+
+function appendPresetRowSuffix(row: string, preferences: OutputPreferences): string {
+  if (!row || preferences.tableRenderMode === 'dsl') {
+    return row
+  }
+
+  return `${row}${resolveRowSuffix(preferences)}`
 }
 
 function joinColumns(values: string[], separator: string): string {
@@ -310,6 +334,21 @@ function joinColumns(values: string[], separator: string): string {
   }
 
   return values.join(separator)
+}
+
+function joinItems(values: string[], separator: string, firstSeparator: string): string {
+  if (!values.length) {
+    return ''
+  }
+
+  return values.reduce((result, value, index) => {
+    if (index === 0) {
+      return value
+    }
+
+    const currentSeparator = index === 1 ? firstSeparator : separator
+    return `${result}${currentSeparator}${value}`
+  }, '')
 }
 
 function splitByFirstColon(value: string): [string, string] {

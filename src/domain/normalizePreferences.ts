@@ -31,10 +31,15 @@ export function normalizePreferences(raw: unknown): OutputPreferences {
     tableRenderMode: normalizeTableRenderMode(raw.tableRenderMode),
     tableDslTemplate: normalizeTextPreference(raw.tableDslTemplate, defaultOutputPreferences.tableDslTemplate),
     tablePairSeparator: normalizeTextPreference(raw.tablePairSeparator, defaultOutputPreferences.tablePairSeparator),
+    tableFirstPairSeparator: normalizeTextPreference(
+      raw.tableFirstPairSeparator,
+      defaultOutputPreferences.tableFirstPairSeparator,
+    ),
     tableKeyValueSeparator: normalizeTextPreference(
       raw.tableKeyValueSeparator,
       defaultOutputPreferences.tableKeyValueSeparator,
     ),
+    tableRowSuffix: normalizeTextPreference(raw.tableRowSuffix, defaultOutputPreferences.tableRowSuffix),
     tableUseHeaderRow: typeof raw.tableUseHeaderRow === 'boolean'
       ? raw.tableUseHeaderRow
       : defaultOutputPreferences.tableUseHeaderRow,

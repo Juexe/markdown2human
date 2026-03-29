@@ -7,7 +7,9 @@ export interface OutputPreferences {
   tableRenderMode: TableRenderMode
   tableDslTemplate: string
   tablePairSeparator: string
+  tableFirstPairSeparator: string
   tableKeyValueSeparator: string
+  tableRowSuffix: string
   tableUseHeaderRow: boolean
   tableSkipEmptyCells: boolean
   paragraphSpacing: string

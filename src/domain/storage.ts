@@ -1,7 +1,7 @@
 import type { OutputPreferences, StoredOutputPreferences } from '@/types/preferences'
 
 export const OUTPUT_PREFERENCES_STORAGE_KEY = 'markdown2human:preferences'
-export const OUTPUT_PREFERENCES_STORAGE_VERSION = 2
+export const OUTPUT_PREFERENCES_STORAGE_VERSION = 3
 
 export const defaultOutputPreferences: OutputPreferences = {
   unorderedListBullet: '-',
@@ -10,7 +10,9 @@ export const defaultOutputPreferences: OutputPreferences = {
   tableRenderMode: 'simple',
   tableDslTemplate: '{pairs}',
   tablePairSeparator: '，',
+  tableFirstPairSeparator: '',
   tableKeyValueSeparator: '：',
+  tableRowSuffix: '',
   tableUseHeaderRow: true,
   tableSkipEmptyCells: true,
   paragraphSpacing: 'normal',

@@ -149,7 +149,9 @@ const settingHints = {
   tableSeparator: '简单分列模式，以及 DSL 中 {cols} 使用的列分隔内容，可直接输入空格、逗号或 \\t。',
   tableRenderMode: '普通用户直接选择预设；切到自定义 DSL 后可以自己决定每一行怎么组织。',
   tablePairSeparator: '键值对模式默认使用的项间分隔，DSL 中 {pairs} 也会使用它。',
+  tableFirstPairSeparator: '仅用于键值对模式，第 1 项后使用的分隔内容，留空则跟项间分隔一致。',
   tableKeyValueSeparator: '键值对模式默认使用的键值连接符，DSL 中 {kv} 和 {pairs} 也会使用它。',
+  tableRowSuffix: '简单分列和键值对模式下，每一行末尾追加的内容，例如 。 或 ；。',
   tableUseHeaderRow: '开启后把表格第一行当表头。简单分列会跳过首行，键值对和 DSL 可以按列名取值。',
   tableSkipEmptyCells: '开启后会忽略空单元格，避免输出残缺的 键: 值 片段。',
   tableDslTemplate: '支持 {col:1}、{col:列名}、{header:1}、{kv:2}、{cols}、{pairs}、{if:备注}...{end}，并可用 | 传局部覆盖分隔符。',
@@ -583,6 +585,23 @@ function labelClass() {
                 </div>
               </div>
 
+              <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <label
+                  v-for="field in toggleFields"
+                  :key="field.key"
+                  class="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-white/78 px-3 py-3"
+                >
+                  <div class="min-w-0 space-y-1">
+                    <p class="flex items-center gap-1 text-xs font-medium text-foreground">
+                      <span>{{ field.label }}</span>
+                      <SettingHint :text="field.hint" />
+                    </p>
+                    <p class="text-xs leading-5 text-muted-foreground">{{ field.description }}</p>
+                  </div>
+                  <Switch v-model="preferences[field.key]" />
+                </label>
+              </div>
+
               <div class="rounded-2xl border border-border/70 bg-white/78 p-4">
                 <div class="space-y-1">
                   <p class="flex items-center gap-1 text-sm font-semibold text-foreground">
@@ -606,9 +625,9 @@ function labelClass() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem
-                          v-for="option in tableRenderModeOptions"
-                          :key="option.value"
-                          :value="option.value"
+                            v-for="option in tableRenderModeOptions"
+                            :key="option.value"
+                            :value="option.value"
                         >
                           {{ option.label }}
                         </SelectItem>
@@ -639,17 +658,31 @@ function labelClass() {
                 </div>
 
                 <div class="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <div v-if="!isCustomTableDslMode" class="space-y-1.5">
+                    <Label for="table-row-suffix" :class="labelClass()">
+                      <span>行末符号</span>
+                      <SettingHint :text="settingHints.tableRowSuffix" />
+                    </Label>
+                    <Input
+                        id="table-row-suffix"
+                        v-model="preferences.tableRowSuffix"
+                        class="h-9 bg-background/80 font-mono"
+                        placeholder="。"
+                        spellcheck="false"
+                    />
+                  </div>
+
                   <div v-if="isSimpleTableMode" class="space-y-1.5">
                     <Label for="table-separator" :class="labelClass()">
                       <span>列分隔</span>
                       <SettingHint :text="settingHints.tableSeparator" />
                     </Label>
                     <Input
-                      id="table-separator"
-                      v-model="preferences.tableSeparator"
-                      class="h-9 bg-background/80 font-mono"
-                      placeholder=" | "
-                      spellcheck="false"
+                        id="table-separator"
+                        v-model="preferences.tableSeparator"
+                        class="h-9 bg-background/80 font-mono"
+                        placeholder=" | "
+                        spellcheck="false"
                     />
                   </div>
 
@@ -659,11 +692,25 @@ function labelClass() {
                       <SettingHint :text="settingHints.tablePairSeparator" />
                     </Label>
                     <Input
-                      id="table-pair-separator"
-                      v-model="preferences.tablePairSeparator"
-                      class="h-9 bg-background/80 font-mono"
-                      placeholder="，"
-                      spellcheck="false"
+                        id="table-pair-separator"
+                        v-model="preferences.tablePairSeparator"
+                        class="h-9 bg-background/80 font-mono"
+                        placeholder="，"
+                        spellcheck="false"
+                    />
+                  </div>
+
+                  <div v-if="isKeyValueTableMode" class="space-y-1.5">
+                    <Label for="table-first-pair-separator" :class="labelClass()">
+                      <span>首项分隔</span>
+                      <SettingHint :text="settingHints.tableFirstPairSeparator" />
+                    </Label>
+                    <Input
+                        id="table-first-pair-separator"
+                        v-model="preferences.tableFirstPairSeparator"
+                        class="h-9 bg-background/80 font-mono"
+                        placeholder="。"
+                        spellcheck="false"
                     />
                   </div>
 
@@ -673,11 +720,11 @@ function labelClass() {
                       <SettingHint :text="settingHints.tableKeyValueSeparator" />
                     </Label>
                     <Input
-                      id="table-key-value-separator"
-                      v-model="preferences.tableKeyValueSeparator"
-                      class="h-9 bg-background/80 font-mono"
-                      placeholder="："
-                      spellcheck="false"
+                        id="table-key-value-separator"
+                        v-model="preferences.tableKeyValueSeparator"
+                        class="h-9 bg-background/80 font-mono"
+                        placeholder="："
+                        spellcheck="false"
                     />
                   </div>
                 </div>
@@ -688,11 +735,11 @@ function labelClass() {
                     <SettingHint :text="settingHints.tableDslTemplate" />
                   </Label>
                   <Textarea
-                    id="table-dsl-template"
-                    v-model="preferences.tableDslTemplate"
-                    class="min-h-28 resize-y bg-background/80 font-mono text-xs leading-6"
-                    placeholder="{pairs}"
-                    spellcheck="false"
+                      id="table-dsl-template"
+                      v-model="preferences.tableDslTemplate"
+                      class="min-h-28 resize-y bg-background/80 font-mono text-xs leading-6"
+                      placeholder="{pairs}"
+                      spellcheck="false"
                   />
                   <p class="text-xs leading-5 text-muted-foreground">
                     可用占位符：<code class="rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{col:1}</code>
@@ -711,31 +758,14 @@ function labelClass() {
                   <p class="text-xs leading-5 text-muted-foreground">
                     例子：
                     <code
-                      v-for="example in tableDslExamples"
-                      :key="example"
-                      class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground"
+                        v-for="example in tableDslExamples"
+                        :key="example"
+                        class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground"
                     >
                       {{ example }}
                     </code>
                   </p>
                 </div>
-              </div>
-
-              <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <label
-                  v-for="field in toggleFields"
-                  :key="field.key"
-                  class="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-white/78 px-3 py-3"
-                >
-                  <div class="min-w-0 space-y-1">
-                    <p class="flex items-center gap-1 text-xs font-medium text-foreground">
-                      <span>{{ field.label }}</span>
-                      <SettingHint :text="field.hint" />
-                    </p>
-                    <p class="text-xs leading-5 text-muted-foreground">{{ field.description }}</p>
-                  </div>
-                  <Switch v-model="preferences[field.key]" />
-                </label>
               </div>
             </section>
 
