@@ -79,7 +79,7 @@ interface ToggleFieldConfig<K extends BooleanPreferenceKey = BooleanPreferenceKe
 
 interface HeadingFieldGroup {
   title: string
-  description: string
+  description?: string
   prefixKey: keyof Pick<OutputPreferences, 'headingLevel1Prefix' | 'headingLevel2Prefix' | 'headingLevel3Prefix'>
   suffixKey: keyof Pick<OutputPreferences, 'headingLevel1Suffix' | 'headingLevel2Suffix' | 'headingLevel3Suffix'>
   dividerKey: keyof Pick<OutputPreferences, 'headingLevel1Divider' | 'headingLevel2Divider' | 'headingLevel3Divider'>
@@ -87,7 +87,7 @@ interface HeadingFieldGroup {
 }
 
 interface TableModeOption {
-  description: string
+  description?: string
   label: string
   value: TableRenderMode
 }
@@ -125,17 +125,17 @@ const tableRenderModeOptions = [
   {
     value: 'simple',
     label: '简单分列',
-    // description: '每一行只拼接值，适合快速导出。',
+    description: '每一行只拼接值，适合快速导出。',
   },
   {
     value: 'keyValue',
     label: '键值对',
-    // description: '按 表头:值 展开，最适合聊天转发。',
+    description: '按 表头:值 展开，最适合聊天转发。',
   },
   {
     value: 'dsl',
     label: '自定义 DSL',
-    // description: '按模板完全自定义每一行的结构。',
+    description: '按模板完全自定义每一行的结构。',
   },
 ] as const satisfies readonly TableModeOption[]
 
@@ -247,7 +247,7 @@ const mediaTextFields = [
 const headingGroups = [
   {
     title: '一级标题',
-    // description: '适合文档主标题或文章标题。',
+    description: '适合文档主标题或文章标题。',
     prefixKey: 'headingLevel1Prefix',
     suffixKey: 'headingLevel1Suffix',
     dividerKey: 'headingLevel1Divider',
@@ -286,10 +286,6 @@ const changedPreferencesCount = computed(
 const isCustomTableDslMode = computed(() => preferences.value.tableRenderMode === 'dsl')
 const isSimpleTableMode = computed(() => preferences.value.tableRenderMode === 'simple')
 const isKeyValueTableMode = computed(() => preferences.value.tableRenderMode === 'keyValue')
-
-const selectedTableModeDescription = computed(
-  () => tableRenderModeOptions.find((option) => option.value === preferences.value.tableRenderMode)?.description ?? '',
-)
 
 const copyButtonLabel = computed(() => {
   if (copyState.value === 'success') return '已复制'
@@ -423,7 +419,6 @@ function labelClass() {
                   </SelectItem>
                 </SelectContent>
               </Select>
-              <p class="text-xs leading-5 text-muted-foreground">{{ selectedTableModeDescription }}</p>
             </div>
 
             <div class="space-y-1.5 rounded-xl border border-border/70 bg-background/75 p-3">
@@ -551,7 +546,7 @@ function labelClass() {
                 输出设置
               </DialogTitle>
               <DialogDescription class="max-w-3xl text-sm leading-6">
-                这里放完整的输出规则。主界面只展示最常改的几个入口，其余细节按标题、结构和媒体格式分组管理，方便后续继续扩展。
+                这里放完整的输出规则。主界面只展示最常改的几个入口，其余细节按基本规则、表格、标题和媒体格式分组管理，方便后续继续扩展。
               </DialogDescription>
             </div>
 
@@ -570,10 +565,10 @@ function labelClass() {
               <div class="space-y-1">
                 <h2 class="flex items-center gap-2 text-sm font-semibold">
                   <ListTree class="size-4 text-muted-foreground" />
-                  结构规则
+                  基本规则
                 </h2>
                 <p class="text-xs leading-5 text-muted-foreground">
-                  先控制段落节奏、列表样式和表格展开方式，这些是最先影响阅读密度的设置。
+                  先控制段落节奏、列表样式和通用保留策略，这些是最先影响阅读密度的设置。
                 </p>
               </div>
 
@@ -631,170 +626,177 @@ function labelClass() {
                 </label>
               </div>
 
-              <div class="rounded-2xl border border-border/70 bg-white/78 p-4">
-                <div class="space-y-1">
-                  <p class="flex items-center gap-1 text-sm font-semibold text-foreground">
-                    <span>表格</span>
-                    <SettingHint :text="settingHints.tableRenderMode" class="size-5" />
-                  </p>
-                  <p class="text-xs leading-5 text-muted-foreground">
-                    预设模式只保留当前模式真正需要的选项，自定义结构时再进入 DSL。
-                  </p>
-                </div>
+            </section>
 
-                <div class="mt-4 flex flex-wrap items-start gap-3">
-                  <div class="w-full space-y-1.5 md:w-64">
-                    <Label for="table-render-mode" :class="labelClass()">
-                      <span>输出模式</span>
-                      <SettingHint :text="settingHints.tableRenderMode" />
-                    </Label>
-                    <Select v-model="preferences.tableRenderMode">
-                      <SelectTrigger id="table-render-mode" class="h-9 bg-background/80 text-xs">
-                        <SelectValue placeholder="输出模式" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem
-                            v-for="option in tableRenderModeOptions"
-                            :key="option.value"
-                            :value="option.value"
-                        >
-                          {{ option.label }}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p class="text-xs leading-5 text-muted-foreground">{{ selectedTableModeDescription }}</p>
-                  </div>
+            <Separator />
 
-                  <label class="mt-6 flex shrink-0 items-center justify-between gap-2 rounded-lg border border-border/70 bg-background/60 px-3 py-2">
-                    <div class="min-w-0">
-                      <p class="flex items-center gap-1 text-[11px] font-medium leading-none text-foreground">
-                        <span>首行作为表头</span>
-                        <SettingHint :text="settingHints.tableUseHeaderRow" />
-                      </p>
-                    </div>
-                    <Switch v-model="preferences.tableUseHeaderRow" />
-                  </label>
+            <section class="space-y-4">
+              <div class="space-y-1">
+                <h2 class="flex items-center gap-2 text-sm font-semibold">
+                  <ListTree class="size-4 text-muted-foreground" />
+                  表格
+                </h2>
+                <p class="text-xs leading-5 text-muted-foreground">
+                  表格单独提一级管理，预设模式只保留当前模式真正需要的选项，自定义结构时再进入 DSL。
+                </p>
+              </div>
 
-                  <label class="mt-6 flex shrink-0 items-center justify-between gap-2 rounded-lg border border-border/70 bg-background/60 px-3 py-2">
-                    <div class="min-w-0">
-                      <p class="flex items-center gap-1 text-[11px] font-medium leading-none text-foreground">
-                        <span>跳过空单元格</span>
-                        <SettingHint :text="settingHints.tableSkipEmptyCells" />
-                      </p>
-                    </div>
-                    <Switch v-model="preferences.tableSkipEmptyCells" />
-                  </label>
-                </div>
-
-                <div class="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  <div v-if="!isCustomTableDslMode" class="space-y-1.5">
-                    <Label for="table-row-suffix" :class="labelClass()">
-                      <span>行末符号</span>
-                      <SettingHint :text="settingHints.tableRowSuffix" />
-                    </Label>
-                    <Input
-                        id="table-row-suffix"
-                        v-model="preferences.tableRowSuffix"
-                        class="h-9 bg-background/80 font-mono"
-                        placeholder="。"
-                        spellcheck="false"
-                    />
-                  </div>
-
-                  <div v-if="isSimpleTableMode" class="space-y-1.5">
-                    <Label for="table-separator" :class="labelClass()">
-                      <span>列分隔</span>
-                      <SettingHint :text="settingHints.tableSeparator" />
-                    </Label>
-                    <Input
-                        id="table-separator"
-                        v-model="preferences.tableSeparator"
-                        class="h-9 bg-background/80 font-mono"
-                        placeholder=" | "
-                        spellcheck="false"
-                    />
-                  </div>
-
-                  <div v-if="isKeyValueTableMode" class="space-y-1.5">
-                    <Label for="table-pair-separator" :class="labelClass()">
-                      <span>项间分隔</span>
-                      <SettingHint :text="settingHints.tablePairSeparator" />
-                    </Label>
-                    <Input
-                        id="table-pair-separator"
-                        v-model="preferences.tablePairSeparator"
-                        class="h-9 bg-background/80 font-mono"
-                        placeholder="，"
-                        spellcheck="false"
-                    />
-                  </div>
-
-                  <div v-if="isKeyValueTableMode" class="space-y-1.5">
-                    <Label for="table-first-pair-separator" :class="labelClass()">
-                      <span>首项分隔</span>
-                      <SettingHint :text="settingHints.tableFirstPairSeparator" />
-                    </Label>
-                    <Input
-                        id="table-first-pair-separator"
-                        v-model="preferences.tableFirstPairSeparator"
-                        class="h-9 bg-background/80 font-mono"
-                        placeholder="。"
-                        spellcheck="false"
-                    />
-                  </div>
-
-                  <div v-if="isKeyValueTableMode" class="space-y-1.5">
-                    <Label for="table-key-value-separator" :class="labelClass()">
-                      <span>键值分隔</span>
-                      <SettingHint :text="settingHints.tableKeyValueSeparator" />
-                    </Label>
-                    <Input
-                        id="table-key-value-separator"
-                        v-model="preferences.tableKeyValueSeparator"
-                        class="h-9 bg-background/80 font-mono"
-                        placeholder="："
-                        spellcheck="false"
-                    />
-                  </div>
-                </div>
-
-                <div v-if="isCustomTableDslMode" class="mt-3 space-y-2 rounded-xl border border-dashed border-border/80 bg-background/60 p-3">
-                  <Label for="table-dsl-template" :class="labelClass()">
-                    <span>DSL 模板</span>
-                    <SettingHint :text="settingHints.tableDslTemplate" />
+              <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div class="space-y-1.5 rounded-xl border border-border/70 bg-white/78 p-3 xl:col-span-1">
+                  <Label for="table-render-mode" :class="labelClass()">
+                    <span>输出模式</span>
+                    <SettingHint :text="settingHints.tableRenderMode" />
                   </Label>
-                  <Textarea
-                      id="table-dsl-template"
-                      v-model="preferences.tableDslTemplate"
-                      class="min-h-28 resize-y bg-background/80 font-mono text-xs leading-6"
-                      placeholder="{pairs}"
-                      spellcheck="false"
-                  />
-                  <p class="text-xs leading-5 text-muted-foreground">
-                    可用占位符：<code class="rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{col:1}</code>
-                    <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{col:列名}</code>
-                    <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{kv:2}</code>
-                    <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{cols}</code>
-                    <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{pairs:2..}</code>
-                  </p>
-                  <p class="text-xs leading-5 text-muted-foreground">
-                    条件块：<code class="rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{if:备注}...{end}</code>
-                    ，局部改分隔：
-                    <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{cols:2..| / }</code>
-                    <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{kv:2| = }</code>
-                    <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{pairs:2..|； | = }</code>
-                  </p>
-                  <p class="text-xs leading-5 text-muted-foreground">
-                    例子：
-                    <code
-                        v-for="example in tableDslExamples"
-                        :key="example"
-                        class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground"
-                    >
-                      {{ example }}
-                    </code>
-                  </p>
+                  <Select v-model="preferences.tableRenderMode">
+                    <SelectTrigger id="table-render-mode" class="h-9 bg-background/80 text-xs">
+                      <SelectValue placeholder="输出模式" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem
+                        v-for="option in tableRenderModeOptions"
+                        :key="option.value"
+                        :value="option.value"
+                      >
+                        {{ option.label }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+
+                <label class="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-white/78 px-3 py-3">
+                  <div class="min-w-0 space-y-1">
+                    <p class="flex items-center gap-1 text-xs font-medium text-foreground">
+                      <span>首行作为表头</span>
+                      <SettingHint :text="settingHints.tableUseHeaderRow" />
+                    </p>
+                    <p class="text-xs leading-5 text-muted-foreground">决定是否把第一行列名用于后续展开。</p>
+                  </div>
+                  <Switch v-model="preferences.tableUseHeaderRow" />
+                </label>
+
+                <label class="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-white/78 px-3 py-3">
+                  <div class="min-w-0 space-y-1">
+                    <p class="flex items-center gap-1 text-xs font-medium text-foreground">
+                      <span>跳过空单元格</span>
+                      <SettingHint :text="settingHints.tableSkipEmptyCells" />
+                    </p>
+                    <p class="text-xs leading-5 text-muted-foreground">避免输出空列带来的残缺片段。</p>
+                  </div>
+                  <Switch v-model="preferences.tableSkipEmptyCells" />
+                </label>
+              </div>
+
+              <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div v-if="!isCustomTableDslMode" class="space-y-1.5 rounded-xl border border-border/70 bg-white/78 p-3">
+                  <Label for="table-row-suffix" :class="labelClass()">
+                    <span>行末符号</span>
+                    <SettingHint :text="settingHints.tableRowSuffix" />
+                  </Label>
+                  <Input
+                    id="table-row-suffix"
+                    v-model="preferences.tableRowSuffix"
+                    class="h-9 bg-background/80 font-mono"
+                    placeholder="。"
+                    spellcheck="false"
+                  />
+                </div>
+
+                <div v-if="isSimpleTableMode" class="space-y-1.5 rounded-xl border border-border/70 bg-white/78 p-3">
+                  <Label for="table-separator" :class="labelClass()">
+                    <span>列分隔</span>
+                    <SettingHint :text="settingHints.tableSeparator" />
+                  </Label>
+                  <Input
+                    id="table-separator"
+                    v-model="preferences.tableSeparator"
+                    class="h-9 bg-background/80 font-mono"
+                    placeholder=" | "
+                    spellcheck="false"
+                  />
+                </div>
+
+                <div v-if="isKeyValueTableMode" class="space-y-1.5 rounded-xl border border-border/70 bg-white/78 p-3">
+                  <Label for="table-pair-separator" :class="labelClass()">
+                    <span>项间分隔</span>
+                    <SettingHint :text="settingHints.tablePairSeparator" />
+                  </Label>
+                  <Input
+                    id="table-pair-separator"
+                    v-model="preferences.tablePairSeparator"
+                    class="h-9 bg-background/80 font-mono"
+                    placeholder="，"
+                    spellcheck="false"
+                  />
+                </div>
+
+                <div v-if="isKeyValueTableMode" class="space-y-1.5 rounded-xl border border-border/70 bg-white/78 p-3">
+                  <Label for="table-first-pair-separator" :class="labelClass()">
+                    <span>首项分隔</span>
+                    <SettingHint :text="settingHints.tableFirstPairSeparator" />
+                  </Label>
+                  <Input
+                    id="table-first-pair-separator"
+                    v-model="preferences.tableFirstPairSeparator"
+                    class="h-9 bg-background/80 font-mono"
+                    placeholder="。"
+                    spellcheck="false"
+                  />
+                </div>
+
+                <div v-if="isKeyValueTableMode" class="space-y-1.5 rounded-xl border border-border/70 bg-white/78 p-3">
+                  <Label for="table-key-value-separator" :class="labelClass()">
+                    <span>键值分隔</span>
+                    <SettingHint :text="settingHints.tableKeyValueSeparator" />
+                  </Label>
+                  <Input
+                    id="table-key-value-separator"
+                    v-model="preferences.tableKeyValueSeparator"
+                    class="h-9 bg-background/80 font-mono"
+                    placeholder="："
+                    spellcheck="false"
+                  />
+                </div>
+              </div>
+
+              <div
+                v-if="isCustomTableDslMode"
+                class="space-y-2 rounded-xl border border-dashed border-border/80 bg-white/78 p-3"
+              >
+                <Label for="table-dsl-template" :class="labelClass()">
+                  <span>DSL 模板</span>
+                  <SettingHint :text="settingHints.tableDslTemplate" />
+                </Label>
+                <Textarea
+                  id="table-dsl-template"
+                  v-model="preferences.tableDslTemplate"
+                  class="min-h-28 resize-y bg-background/80 font-mono text-xs leading-6"
+                  placeholder="{pairs}"
+                  spellcheck="false"
+                />
+                <p class="text-xs leading-5 text-muted-foreground">
+                  可用占位符：<code class="rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{col:1}</code>
+                  <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{col:列名}</code>
+                  <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{kv:2}</code>
+                  <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{cols}</code>
+                  <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{pairs:2..}</code>
+                </p>
+                <p class="text-xs leading-5 text-muted-foreground">
+                  条件块：<code class="rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{if:备注}...{end}</code>
+                  ，局部改分隔：
+                  <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{cols:2..| / }</code>
+                  <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{kv:2| = }</code>
+                  <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{pairs:2..|； | = }</code>
+                </p>
+                <p class="text-xs leading-5 text-muted-foreground">
+                  例子：
+                  <code
+                    v-for="example in tableDslExamples"
+                    :key="example"
+                    class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground"
+                  >
+                    {{ example }}
+                  </code>
+                </p>
               </div>
             </section>
 
@@ -822,7 +824,6 @@ function labelClass() {
                       <span>{{ group.title }}</span>
                       <SettingHint :text="group.hint" class="size-5" />
                     </p>
-                    <p class="text-xs leading-5 text-muted-foreground">{{ group.description }}</p>
                   </div>
 
                   <div class="grid gap-2 sm:grid-cols-3">
