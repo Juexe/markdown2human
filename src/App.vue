@@ -92,6 +92,52 @@ interface TableModeOption {
   value: TableRenderMode
 }
 
+const sampleMarkdown = `# 前端学习计划
+
+这是一个**简单但完整**的学习计划示例，包含 *重点标记*、~~暂缓内容~~、行内代码 \`pnpm dev\`、[参考文档](https://developer.mozilla.org/) 和一处手动换行。
+这一行会紧接着上一行，方便观察换行转换。
+
+## 本周学习重点
+
+- 熟悉 Vue 3 基础语法
+- 练习 Markdown 转文本工具的使用
+  - 标题层级整理
+  - 列表与缩进表达
+  - 链接与图片说明保留
+- 记录一段内联 HTML：<span>重点概念</span>
+
+
+## 学习进度表
+
+|    | 进度 | 备注 |
+| --- | --- | --- |
+| Vue 3 | 学习中 | 先掌握组合式 API |
+| TypeScript | 已入门 | 多练类型收窄 |
+| Markdown | 已掌握 | 重点放在结构化表达 |
+| 工具实战 | 进行中 | 每周做一个小项目 |
+
+## 学习任务清单
+
+1. 阅读一篇官方文档
+2. 完成一个小练习
+3. 输出一份可转发的学习笔记
+
+### 复盘提醒
+
+> 学习计划要尽量具体，避免只写“继续努力”这种空话。
+> 如果某个知识点没掌握，至少留下下一步行动。
+
+![学习流程图](https://example.com/study-plan.png)
+
+---
+
+\`\`\`ts
+const studyTasks = ['read docs', 'build demo', 'write notes']
+
+console.log(studyTasks.join(' -> '))
+\`\`\`
+`
+
 const markdownSource = ref('')
 const outputText = ref('')
 const appVersion = packageJson.version
@@ -345,6 +391,10 @@ function restoreDefaultPreferences() {
   }
 }
 
+function loadSampleMarkdown() {
+  markdownSource.value = sampleMarkdown
+}
+
 function labelClass() {
   return 'flex items-center gap-1 text-xs text-muted-foreground'
 }
@@ -476,6 +526,10 @@ function labelClass() {
                   <CardTitle class="text-sm font-semibold">Markdown</CardTitle>
                 </div>
                 <div class="flex gap-2">
+                  <Button variant="outline" size="sm" @click="loadSampleMarkdown">
+                    <Sparkles />
+                    示例
+                  </Button>
                   <Button variant="outline" size="sm" @click="localFile.openFileDialog">
                     <FolderOpen />
                     打开
