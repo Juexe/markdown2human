@@ -1,4 +1,4 @@
-# Markdown2Human 技术设计文档
+# markdown2human 技术设计文档
 
 ## 1. 文档目标
 

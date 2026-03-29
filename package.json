@@ -1,7 +1,8 @@
 {
   "name": "markdown2human",
+  "description": "A minimal frontend tool for converting Markdown into chat-friendly plain text.",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

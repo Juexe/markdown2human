@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import packageJson from '../package.json'
 import type { OutputPreferences, TableRenderMode } from '@/types/preferences'
 import {
   FolderOpen,
@@ -91,6 +92,7 @@ interface TableModeOption {
 
 const markdownSource = ref('')
 const outputText = ref('')
+const appVersion = packageJson.version
 const settingsDialogOpen = ref(false)
 const pasteState = ref<'idle' | 'success' | 'error'>('idle')
 const pasteMessage = ref('')
@@ -356,7 +358,7 @@ function labelClass() {
     <Dialog v-model:open="settingsDialogOpen">
       <main class="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
         <header class="flex min-w-0 items-center gap-3 px-1">
-          <p class="shrink-0 text-xs font-medium tracking-[0.28em] text-muted-foreground uppercase">md2human</p>
+          <p class="shrink-0 text-xs font-medium tracking-[0.28em] text-muted-foreground uppercase">markdown2human</p>
           <span class="h-4 w-px shrink-0 bg-border/80" />
           <h1 class="min-w-0 truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
             把 Markdown 整理成更适合聊天、转发和纯文本阅读的内容
@@ -498,12 +500,9 @@ function labelClass() {
           </Card>
         </section>
 
-        <footer class="pb-1 text-xs leading-5 text-muted-foreground">
-          <p>
-            转换在浏览器本地完成，只保存设置偏好到
-            <code class="rounded bg-white/70 px-1 py-0.5 text-[11px] text-foreground">localStorage</code>。
-          </p>
-          <p>md2human v1.0.0 by Juexe</p>
+        <footer class="pb-1 text-xs leading-5 text-muted-foreground text-center">
+          <p>✅您的所有数据和转换过程都在浏览器本地完成</p>
+          <p>markdown2human v{{ appVersion }} by Juexe</p>
         </footer>
       </main>
 

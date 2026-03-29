@@ -1,5 +1,26 @@
-# Vue 3 + TypeScript + Vite
+# markdown2human
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+markdown2human 是一个极简的纯前端单页工具，用来把 Markdown 转成更适合聊天、转发和纯文本阅读的内容。
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## 开发
+
+```bash
+pnpm install
+pnpm dev
+```
+
+## 构建
+
+```bash
+pnpm build
+pnpm preview
+```
+
+## 技术栈
+
+- Vue 3
+- TypeScript
+- Vite
+- Tailwind CSS v4
+- shadcn-vue
+- unified + remark

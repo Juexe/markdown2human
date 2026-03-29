@@ -1,4 +1,4 @@
-# Markdown2Human UI 设计简稿
+# markdown2human UI 设计简稿
 
 ## 1. 设计目标
 
