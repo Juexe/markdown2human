@@ -39,7 +39,6 @@ export function renderTableRows(rows: string[][], preferences: OutputPreferences
         row,
         preferences,
       }))
-      .map((row) => appendRowSuffix(row, preferences))
       .filter(Boolean)
       .join('\n')
   } catch {
@@ -151,7 +150,7 @@ function renderToken(expression: string, context: RowContext): string | null {
     case 'header':
       return renderHeader(selector, context)
     case 'kv':
-      return renderKeyValue(selector, context)
+      return renderKeyValue(selector, context, decodeEscapes(overrideParts[0] ?? ''))
     case 'cols':
       return renderColumns(selector, context, decodeEscapes(overrideParts[0] ?? ''))
     case 'pairs':
@@ -159,6 +158,7 @@ function renderToken(expression: string, context: RowContext): string | null {
         selector,
         context,
         decodeEscapes(overrideParts[0] ?? ''),
+        decodeEscapes(overrideParts[1] ?? ''),
       )
     default:
       return null
@@ -185,14 +185,14 @@ function renderHeader(selector: string, context: RowContext): string {
   return context.headers[index] ?? ''
 }
 
-function renderKeyValue(selector: string, context: RowContext): string {
+function renderKeyValue(selector: string, context: RowContext, customKeyValueSeparator: string): string {
   const index = resolveFirstIndex(selector, context.headers)
 
   if (index === null) {
     return ''
   }
 
-  return formatKeyValue(index, context)
+  return formatKeyValue(index, context, customKeyValueSeparator)
 }
 
 function renderColumns(selector: string, context: RowContext, customSeparator: string): string {
@@ -203,7 +203,6 @@ function renderColumns(selector: string, context: RowContext, customSeparator: s
     .map((index) => context.row[index] ?? '')
     .filter((value) => value || !context.preferences.tableSkipEmptyCells),
     separator,
-    context.preferences,
   )
 }
 
@@ -211,16 +210,17 @@ function renderPairs(
   selector: string,
   context: RowContext,
   customPairSeparator: string,
+  customKeyValueSeparator: string,
 ): string {
   const pairSeparator = customPairSeparator || resolvePairSeparator(context.preferences)
 
   return resolveIndexes(selector, context.headers)
-    .map((index) => formatKeyValue(index, context))
+    .map((index) => formatKeyValue(index, context, customKeyValueSeparator))
     .filter(Boolean)
     .join(pairSeparator)
 }
 
-function formatKeyValue(index: number, context: RowContext): string {
+function formatKeyValue(index: number, context: RowContext, customKeyValueSeparator = ''): string {
   const key = context.headers[index] ?? `列${index + 1}`
   const value = context.row[index] ?? ''
 
@@ -229,10 +229,11 @@ function formatKeyValue(index: number, context: RowContext): string {
   }
 
   if (!key) {
-    return wrapValue(value, context.preferences)
+    return value
   }
 
-  return `${wrapKey(key, context.preferences)}${wrapValue(value, context.preferences)}`
+  const separator = customKeyValueSeparator || resolveKeyValueSeparator(context.preferences)
+  return `${key}${separator}${value}`
 }
 
 function resolveIndexes(selector: string, headers: string[]): number[] {
@@ -286,8 +287,7 @@ function resolveFirstIndex(selector: string, headers: string[]): number | null {
 
 function renderSimpleRows(rows: string[][], preferences: OutputPreferences): string {
   return rows
-    .map((row) => joinColumns(row, resolveSimpleSeparator(preferences), preferences).trim())
-    .map((row) => appendRowSuffix(row, preferences))
+    .map((row) => joinColumns(row, resolveSimpleSeparator(preferences)).trim())
     .filter(Boolean)
     .join('\n')
 }
@@ -296,66 +296,20 @@ function resolveSimpleSeparator(preferences: OutputPreferences): string {
   return decodeEscapes(preferences.tableSeparator)
 }
 
-function resolveFirstColumnSeparator(preferences: OutputPreferences): string {
-  return decodeEscapes(preferences.tableFirstColumnSeparator)
-}
-
 function resolvePairSeparator(preferences: OutputPreferences): string {
   return decodeEscapes(preferences.tablePairSeparator)
 }
 
-function resolveKeyPrefix(preferences: OutputPreferences): string {
-  return decodeEscapes(preferences.tableKeyPrefix)
+function resolveKeyValueSeparator(preferences: OutputPreferences): string {
+  return decodeEscapes(preferences.tableKeyValueSeparator)
 }
 
-function resolveKeySuffix(preferences: OutputPreferences): string {
-  return decodeEscapes(preferences.tableKeySuffix)
-}
-
-function resolveValuePrefix(preferences: OutputPreferences): string {
-  return decodeEscapes(preferences.tableValuePrefix)
-}
-
-function resolveValueSuffix(preferences: OutputPreferences): string {
-  return decodeEscapes(preferences.tableValueSuffix)
-}
-
-function resolveRowSuffix(preferences: OutputPreferences): string {
-  return decodeEscapes(preferences.tableRowSuffix)
-}
-
-function appendRowSuffix(row: string, preferences: OutputPreferences): string {
-  if (!row) {
-    return ''
-  }
-
-  return `${row}${resolveRowSuffix(preferences)}`
-}
-
-function joinColumns(values: string[], separator: string, preferences: OutputPreferences): string {
+function joinColumns(values: string[], separator: string): string {
   if (!values.length) {
     return ''
   }
 
-  return values.reduce((result, value, index) => {
-    if (index === 0) {
-      return value
-    }
-
-    const currentSeparator = index === 1
-      ? resolveFirstColumnSeparator(preferences)
-      : separator
-
-    return `${result}${currentSeparator}${value}`
-  }, '')
-}
-
-function wrapKey(key: string, preferences: OutputPreferences): string {
-  return `${resolveKeyPrefix(preferences)}${key}${resolveKeySuffix(preferences)}`
-}
-
-function wrapValue(value: string, preferences: OutputPreferences): string {
-  return `${resolveValuePrefix(preferences)}${value}${resolveValueSuffix(preferences)}`
+  return values.join(separator)
 }
 
 function splitByFirstColon(value: string): [string, string] {

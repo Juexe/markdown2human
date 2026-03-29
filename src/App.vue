@@ -140,24 +140,19 @@ const tableRenderModeOptions = [
 
 const tableDslExamples = [
   '{pairs}',
-  '{col:1}{cols:2..}',
-  '{if:备注}备注：{col:备注}{end}',
+  '{header:1}：{col:1} | {cols:2..| / }',
+  '{pairs:2..|； | = }',
 ] as const
 
 const settingHints = {
   unorderedListBullet: '无序列表项使用的前导符号，例如 -, *, •。',
-  tableSeparator: '简单分列模式和 DSL 中 {cols} 使用的列分隔内容，可直接输入空格、逗号或 \\t。',
-  tableFirstColumnSeparator: '第 1 列和后续列之间专用的分隔内容，优先级高于列分隔，留空则表示首列后不插入任何分隔。',
+  tableSeparator: '简单分列模式，以及 DSL 中 {cols} 使用的列分隔内容，可直接输入空格、逗号或 \\t。',
   tableRenderMode: '普通用户直接选择预设；切到自定义 DSL 后可以自己决定每一行怎么组织。',
-  tablePairSeparator: '键值对预设，以及 DSL 中 {pairs} 默认使用的项间分隔符。',
-  tableKeyPrefix: '输出键名前追加的内容，例如 【 或 ( 。',
-  tableKeySuffix: '输出键名后追加的内容，例如 ：、】 或 = 。',
-  tableValuePrefix: '输出值前追加的内容，例如 空格、【 或 ( 。',
-  tableValueSuffix: '输出值后追加的内容，例如 】、) 或 。',
-  tableRowSuffix: '每一行渲染完成后追加的尾部内容，例如 。、； 或 \\n。',
-  tableUseHeaderRow: '开启后用表格第一行当表头，关闭后自动生成 列1、列2、列3。',
+  tablePairSeparator: '键值对模式默认使用的项间分隔，DSL 中 {pairs} 也会使用它。',
+  tableKeyValueSeparator: '键值对模式默认使用的键值连接符，DSL 中 {kv} 和 {pairs} 也会使用它。',
+  tableUseHeaderRow: '开启后把表格第一行当表头。简单分列会跳过首行，键值对和 DSL 可以按列名取值。',
   tableSkipEmptyCells: '开启后会忽略空单元格，避免输出残缺的 键: 值 片段。',
-  tableDslTemplate: '支持 {col:1}、{col:列名}、{header:1}、{kv:2}、{cols}、{pairs}、{pairs:2..}、{if:备注}...{end}。',
+  tableDslTemplate: '支持 {col:1}、{col:列名}、{header:1}、{kv:2}、{cols}、{pairs}、{if:备注}...{end}，并可用 | 传局部覆盖分隔符。',
   paragraphSpacing: '控制段落块之间保留的空行数量。',
   orderedListSuffix: '有序列表数字后的后缀，例如 .、)、、。',
   preserveOrderedListNumber: '关闭后，有序列表会按无序列表符号输出。',
@@ -284,6 +279,8 @@ const changedPreferencesCount = computed(
 )
 
 const isCustomTableDslMode = computed(() => preferences.value.tableRenderMode === 'dsl')
+const isSimpleTableMode = computed(() => preferences.value.tableRenderMode === 'simple')
+const isKeyValueTableMode = computed(() => preferences.value.tableRenderMode === 'keyValue')
 
 const selectedTableModeDescription = computed(
   () => tableRenderModeOptions.find((option) => option.value === preferences.value.tableRenderMode)?.description ?? '',
@@ -593,12 +590,12 @@ function labelClass() {
                     <SettingHint :text="settingHints.tableRenderMode" class="size-5" />
                   </p>
                   <p class="text-xs leading-5 text-muted-foreground">
-                    普通用户选预设即可，高级用户可以直接写 DSL 模板。
+                    预设模式只保留当前模式真正需要的选项，自定义结构时再进入 DSL。
                   </p>
                 </div>
 
-                <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  <div class="space-y-1.5">
+                <div class="mt-4 flex flex-wrap items-start gap-3">
+                  <div class="w-full space-y-1.5 md:w-64">
                     <Label for="table-render-mode" :class="labelClass()">
                       <span>输出模式</span>
                       <SettingHint :text="settingHints.tableRenderMode" />
@@ -620,7 +617,29 @@ function labelClass() {
                     <p class="text-xs leading-5 text-muted-foreground">{{ selectedTableModeDescription }}</p>
                   </div>
 
-                  <div class="space-y-1.5">
+                  <label class="mt-6 flex shrink-0 items-center justify-between gap-2 rounded-lg border border-border/70 bg-background/60 px-3 py-2">
+                    <div class="min-w-0">
+                      <p class="flex items-center gap-1 text-[11px] font-medium leading-none text-foreground">
+                        <span>首行作为表头</span>
+                        <SettingHint :text="settingHints.tableUseHeaderRow" />
+                      </p>
+                    </div>
+                    <Switch v-model="preferences.tableUseHeaderRow" />
+                  </label>
+
+                  <label class="mt-6 flex shrink-0 items-center justify-between gap-2 rounded-lg border border-border/70 bg-background/60 px-3 py-2">
+                    <div class="min-w-0">
+                      <p class="flex items-center gap-1 text-[11px] font-medium leading-none text-foreground">
+                        <span>跳过空单元格</span>
+                        <SettingHint :text="settingHints.tableSkipEmptyCells" />
+                      </p>
+                    </div>
+                    <Switch v-model="preferences.tableSkipEmptyCells" />
+                  </label>
+                </div>
+
+                <div class="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <div v-if="isSimpleTableMode" class="space-y-1.5">
                     <Label for="table-separator" :class="labelClass()">
                       <span>列分隔</span>
                       <SettingHint :text="settingHints.tableSeparator" />
@@ -634,21 +653,7 @@ function labelClass() {
                     />
                   </div>
 
-                  <div class="space-y-1.5">
-                    <Label for="table-first-column-separator" :class="labelClass()">
-                      <span>首列分隔</span>
-                      <SettingHint :text="settingHints.tableFirstColumnSeparator" />
-                    </Label>
-                    <Input
-                      id="table-first-column-separator"
-                      v-model="preferences.tableFirstColumnSeparator"
-                      class="h-9 bg-background/80 font-mono"
-                      placeholder=" | "
-                      spellcheck="false"
-                    />
-                  </div>
-
-                  <div class="space-y-1.5">
+                  <div v-if="isKeyValueTableMode" class="space-y-1.5">
                     <Label for="table-pair-separator" :class="labelClass()">
                       <span>项间分隔</span>
                       <SettingHint :text="settingHints.tablePairSeparator" />
@@ -662,99 +667,19 @@ function labelClass() {
                     />
                   </div>
 
-                  <div class="space-y-1.5">
-                    <Label for="table-row-suffix" :class="labelClass()">
-                      <span>行末分隔</span>
-                      <SettingHint :text="settingHints.tableRowSuffix" />
+                  <div v-if="isKeyValueTableMode" class="space-y-1.5">
+                    <Label for="table-key-value-separator" :class="labelClass()">
+                      <span>键值分隔</span>
+                      <SettingHint :text="settingHints.tableKeyValueSeparator" />
                     </Label>
                     <Input
-                      id="table-row-suffix"
-                      v-model="preferences.tableRowSuffix"
-                      class="h-9 bg-background/80 font-mono"
-                      placeholder="。"
-                      spellcheck="false"
-                    />
-                  </div>
-
-                  <div class="space-y-1.5">
-                    <Label for="table-key-prefix" :class="labelClass()">
-                      <span>键前缀</span>
-                      <SettingHint :text="settingHints.tableKeyPrefix" />
-                    </Label>
-                    <Input
-                      id="table-key-prefix"
-                      v-model="preferences.tableKeyPrefix"
-                      class="h-9 bg-background/80 font-mono"
-                      placeholder=""
-                      spellcheck="false"
-                    />
-                  </div>
-
-                  <div class="space-y-1.5">
-                    <Label for="table-key-suffix" :class="labelClass()">
-                      <span>键后缀</span>
-                      <SettingHint :text="settingHints.tableKeySuffix" />
-                    </Label>
-                    <Input
-                      id="table-key-suffix"
-                      v-model="preferences.tableKeySuffix"
+                      id="table-key-value-separator"
+                      v-model="preferences.tableKeyValueSeparator"
                       class="h-9 bg-background/80 font-mono"
                       placeholder="："
                       spellcheck="false"
                     />
                   </div>
-
-                  <div class="space-y-1.5">
-                    <Label for="table-value-prefix" :class="labelClass()">
-                      <span>值前缀</span>
-                      <SettingHint :text="settingHints.tableValuePrefix" />
-                    </Label>
-                    <Input
-                      id="table-value-prefix"
-                      v-model="preferences.tableValuePrefix"
-                      class="h-9 bg-background/80 font-mono"
-                      placeholder=""
-                      spellcheck="false"
-                    />
-                  </div>
-
-                  <div class="space-y-1.5">
-                    <Label for="table-value-suffix" :class="labelClass()">
-                      <span>值后缀</span>
-                      <SettingHint :text="settingHints.tableValueSuffix" />
-                    </Label>
-                    <Input
-                      id="table-value-suffix"
-                      v-model="preferences.tableValueSuffix"
-                      class="h-9 bg-background/80 font-mono"
-                      placeholder=""
-                      spellcheck="false"
-                    />
-                  </div>
-                </div>
-
-                <div class="mt-3 grid gap-3 md:grid-cols-2">
-                  <label class="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-background/60 px-3 py-3">
-                    <div class="min-w-0 space-y-1">
-                      <p class="flex items-center gap-1 text-xs font-medium text-foreground">
-                        <span>首行作为表头</span>
-                        <SettingHint :text="settingHints.tableUseHeaderRow" />
-                      </p>
-                      <p class="text-xs leading-5 text-muted-foreground">决定 DSL 是否按第一行的列名取值。</p>
-                    </div>
-                    <Switch v-model="preferences.tableUseHeaderRow" />
-                  </label>
-
-                  <label class="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-background/60 px-3 py-3">
-                    <div class="min-w-0 space-y-1">
-                      <p class="flex items-center gap-1 text-xs font-medium text-foreground">
-                        <span>跳过空单元格</span>
-                        <SettingHint :text="settingHints.tableSkipEmptyCells" />
-                      </p>
-                      <p class="text-xs leading-5 text-muted-foreground">避免输出空的键值片段或多余分隔符。</p>
-                    </div>
-                    <Switch v-model="preferences.tableSkipEmptyCells" />
-                  </label>
                 </div>
 
                 <div v-if="isCustomTableDslMode" class="mt-3 space-y-2 rounded-xl border border-dashed border-border/80 bg-background/60 p-3">
@@ -778,7 +703,10 @@ function labelClass() {
                   </p>
                   <p class="text-xs leading-5 text-muted-foreground">
                     条件块：<code class="rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{if:备注}...{end}</code>
-                    ，局部改项间分隔：<code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{pairs:2..|； }</code>
+                    ，局部改分隔：
+                    <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{cols:2..| / }</code>
+                    <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{kv:2| = }</code>
+                    <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{pairs:2..|； | = }</code>
                   </p>
                   <p class="text-xs leading-5 text-muted-foreground">
                     例子：

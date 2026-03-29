@@ -1,21 +1,16 @@
 import type { OutputPreferences, StoredOutputPreferences } from '@/types/preferences'
 
 export const OUTPUT_PREFERENCES_STORAGE_KEY = 'markdown2human:preferences'
-export const OUTPUT_PREFERENCES_STORAGE_VERSION = 1
+export const OUTPUT_PREFERENCES_STORAGE_VERSION = 2
 
 export const defaultOutputPreferences: OutputPreferences = {
   unorderedListBullet: '-',
   orderedListSuffix: '.',
   tableSeparator: ' | ',
-  tableFirstColumnSeparator: ' | ',
   tableRenderMode: 'simple',
   tableDslTemplate: '{pairs}',
   tablePairSeparator: '，',
-  tableKeyPrefix: '',
-  tableKeySuffix: '：',
-  tableValuePrefix: '',
-  tableValueSuffix: '',
-  tableRowSuffix: '',
+  tableKeyValueSeparator: '：',
   tableUseHeaderRow: true,
   tableSkipEmptyCells: true,
   paragraphSpacing: 'normal',

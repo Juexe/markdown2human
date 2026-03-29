@@ -28,15 +28,13 @@ export function normalizePreferences(raw: unknown): OutputPreferences {
     unorderedListBullet: normalizeTextPreference(raw.unorderedListBullet, defaultOutputPreferences.unorderedListBullet),
     orderedListSuffix: normalizeTextPreference(raw.orderedListSuffix, defaultOutputPreferences.orderedListSuffix),
     tableSeparator: normalizeTextPreference(raw.tableSeparator, defaultOutputPreferences.tableSeparator),
-    tableFirstColumnSeparator: normalizeTextPreference(raw.tableFirstColumnSeparator, defaultOutputPreferences.tableFirstColumnSeparator),
     tableRenderMode: normalizeTableRenderMode(raw.tableRenderMode),
     tableDslTemplate: normalizeTextPreference(raw.tableDslTemplate, defaultOutputPreferences.tableDslTemplate),
     tablePairSeparator: normalizeTextPreference(raw.tablePairSeparator, defaultOutputPreferences.tablePairSeparator),
-    tableKeyPrefix: normalizeTextPreference(raw.tableKeyPrefix, defaultOutputPreferences.tableKeyPrefix),
-    tableKeySuffix: normalizeTextPreference(raw.tableKeySuffix, defaultOutputPreferences.tableKeySuffix),
-    tableValuePrefix: normalizeTextPreference(raw.tableValuePrefix, defaultOutputPreferences.tableValuePrefix),
-    tableValueSuffix: normalizeTextPreference(raw.tableValueSuffix, defaultOutputPreferences.tableValueSuffix),
-    tableRowSuffix: normalizeTextPreference(raw.tableRowSuffix, defaultOutputPreferences.tableRowSuffix),
+    tableKeyValueSeparator: normalizeTextPreference(
+      raw.tableKeyValueSeparator,
+      defaultOutputPreferences.tableKeyValueSeparator,
+    ),
     tableUseHeaderRow: typeof raw.tableUseHeaderRow === 'boolean'
       ? raw.tableUseHeaderRow
       : defaultOutputPreferences.tableUseHeaderRow,
