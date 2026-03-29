@@ -55,6 +55,8 @@ const paragraphSpacingOptions = [
   { label: '宽松', value: 'relaxed' },
   { label: '更宽', value: 'wide' },
 ] as const
+const headingAffixSuggestions = ['《', '》', '【', '】', '「', '」', '# ', '']
+const headingDividerSuggestions = ['auto', '================', '----------------', '~~~~~~~~~~~~', '']
 const quotePrefixSuggestions = ['> ', '｜ ', '引用：', '// ', '※ ']
 const imageLabelSuggestions = ['图片：', '图：', 'Image:', 'Alt:', '']
 const codeBlockLabelSuggestions = ['代码块', '代码', 'Snippet', 'Code', '源码']
@@ -232,61 +234,154 @@ function restoreDefaultPreferences() {
             </div>
           </div>
 
-          <div v-if="showAdvancedSettings" class="overflow-x-auto border-t border-border/70 pt-2">
-            <div class="flex min-w-max items-center gap-3">
-              <div class="flex shrink-0 items-center gap-2">
-                <Label for="ordered-list-suffix" class="shrink-0 text-xs text-muted-foreground">编号后缀</Label>
-                <Input
-                  id="ordered-list-suffix"
-                  v-model="preferences.orderedListSuffix"
-                  class="h-8 w-20 bg-white/70 font-mono"
-                  list="ordered-list-suffix-suggestions"
-                  spellcheck="false"
-                />
+          <div v-if="showAdvancedSettings" class="space-y-2 border-t border-border/70 pt-2">
+            <div class="overflow-x-auto">
+              <div class="flex min-w-max items-center gap-3">
+                <div class="flex shrink-0 items-center gap-2">
+                  <Label for="ordered-list-suffix" class="shrink-0 text-xs text-muted-foreground">编号后缀</Label>
+                  <Input
+                    id="ordered-list-suffix"
+                    v-model="preferences.orderedListSuffix"
+                    class="h-8 w-20 bg-white/70 font-mono"
+                    list="ordered-list-suffix-suggestions"
+                    spellcheck="false"
+                  />
+                </div>
+
+                <div class="flex shrink-0 items-center gap-2">
+                  <Label for="quote-prefix" class="shrink-0 text-xs text-muted-foreground">引用前缀</Label>
+                  <Input
+                    id="quote-prefix"
+                    v-model="preferences.quotePrefix"
+                    class="h-8 w-24 bg-white/70 font-mono"
+                    list="quote-prefix-suggestions"
+                    spellcheck="false"
+                  />
+                </div>
+
+                <div class="flex shrink-0 items-center gap-2">
+                  <Label for="image-label" class="shrink-0 text-xs text-muted-foreground">图片标签</Label>
+                  <Input
+                    id="image-label"
+                    v-model="preferences.imageLabel"
+                    class="h-8 w-24 bg-white/70 font-mono"
+                    list="image-label-suggestions"
+                    spellcheck="false"
+                  />
+                </div>
+
+                <div class="flex shrink-0 items-center gap-2">
+                  <Label for="code-block-label" class="shrink-0 text-xs text-muted-foreground">代码标签</Label>
+                  <Input
+                    id="code-block-label"
+                    v-model="preferences.codeBlockLabel"
+                    class="h-8 w-24 bg-white/70 font-mono"
+                    list="code-block-label-suggestions"
+                    spellcheck="false"
+                  />
+                </div>
+
+                <label class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2.5 py-1.5">
+                  <p class="truncate text-xs font-medium">图片说明</p>
+                  <Switch v-model="preferences.preserveImageAlt" />
+                </label>
+
+                <label class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2.5 py-1.5">
+                  <p class="truncate text-xs font-medium">代码块</p>
+                  <Switch v-model="preferences.preserveCodeBlock" />
+                </label>
               </div>
+            </div>
 
-              <div class="flex shrink-0 items-center gap-2">
-                <Label for="quote-prefix" class="shrink-0 text-xs text-muted-foreground">引用前缀</Label>
-                <Input
-                  id="quote-prefix"
-                  v-model="preferences.quotePrefix"
-                  class="h-8 w-24 bg-white/70 font-mono"
-                  list="quote-prefix-suggestions"
-                  spellcheck="false"
-                />
+            <div class="overflow-x-auto">
+              <div class="flex min-w-max items-center gap-3">
+                <p class="shrink-0 text-xs font-medium text-muted-foreground">标题</p>
+                <span class="h-4 w-px shrink-0 bg-border" />
+
+                <div class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2 py-1.5">
+                  <p class="text-xs font-medium">H1</p>
+                  <Input
+                    v-model="preferences.headingLevel1Prefix"
+                    aria-label="一级标题前缀"
+                    class="h-8 w-14 bg-white/70 font-mono"
+                    list="heading-affix-suggestions"
+                    placeholder="前"
+                    spellcheck="false"
+                  />
+                  <Input
+                    v-model="preferences.headingLevel1Suffix"
+                    aria-label="一级标题后缀"
+                    class="h-8 w-14 bg-white/70 font-mono"
+                    list="heading-affix-suggestions"
+                    placeholder="后"
+                    spellcheck="false"
+                  />
+                  <Input
+                    v-model="preferences.headingLevel1Divider"
+                    aria-label="一级标题分隔行"
+                    class="h-8 w-36 bg-white/70 font-mono"
+                    list="heading-divider-suggestions"
+                    placeholder="分隔行"
+                    spellcheck="false"
+                  />
+                </div>
+
+                <div class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2 py-1.5">
+                  <p class="text-xs font-medium">H2</p>
+                  <Input
+                    v-model="preferences.headingLevel2Prefix"
+                    aria-label="二级标题前缀"
+                    class="h-8 w-14 bg-white/70 font-mono"
+                    list="heading-affix-suggestions"
+                    placeholder="前"
+                    spellcheck="false"
+                  />
+                  <Input
+                    v-model="preferences.headingLevel2Suffix"
+                    aria-label="二级标题后缀"
+                    class="h-8 w-14 bg-white/70 font-mono"
+                    list="heading-affix-suggestions"
+                    placeholder="后"
+                    spellcheck="false"
+                  />
+                  <Input
+                    v-model="preferences.headingLevel2Divider"
+                    aria-label="二级标题分隔行"
+                    class="h-8 w-36 bg-white/70 font-mono"
+                    list="heading-divider-suggestions"
+                    placeholder="分隔行"
+                    spellcheck="false"
+                  />
+                </div>
+
+                <div class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2 py-1.5">
+                  <p class="text-xs font-medium">H3</p>
+                  <Input
+                    v-model="preferences.headingLevel3Prefix"
+                    aria-label="三级标题前缀"
+                    class="h-8 w-14 bg-white/70 font-mono"
+                    list="heading-affix-suggestions"
+                    placeholder="前"
+                    spellcheck="false"
+                  />
+                  <Input
+                    v-model="preferences.headingLevel3Suffix"
+                    aria-label="三级标题后缀"
+                    class="h-8 w-14 bg-white/70 font-mono"
+                    list="heading-affix-suggestions"
+                    placeholder="后"
+                    spellcheck="false"
+                  />
+                  <Input
+                    v-model="preferences.headingLevel3Divider"
+                    aria-label="三级标题分隔行"
+                    class="h-8 w-36 bg-white/70 font-mono"
+                    list="heading-divider-suggestions"
+                    placeholder="分隔行"
+                    spellcheck="false"
+                  />
+                </div>
               </div>
-
-              <div class="flex shrink-0 items-center gap-2">
-                <Label for="image-label" class="shrink-0 text-xs text-muted-foreground">图片标签</Label>
-                <Input
-                  id="image-label"
-                  v-model="preferences.imageLabel"
-                  class="h-8 w-24 bg-white/70 font-mono"
-                  list="image-label-suggestions"
-                  spellcheck="false"
-                />
-              </div>
-
-              <div class="flex shrink-0 items-center gap-2">
-                <Label for="code-block-label" class="shrink-0 text-xs text-muted-foreground">代码标签</Label>
-                <Input
-                  id="code-block-label"
-                  v-model="preferences.codeBlockLabel"
-                  class="h-8 w-24 bg-white/70 font-mono"
-                  list="code-block-label-suggestions"
-                  spellcheck="false"
-                />
-              </div>
-
-              <label class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2.5 py-1.5">
-                <p class="truncate text-xs font-medium">图片说明</p>
-                <Switch v-model="preferences.preserveImageAlt" />
-              </label>
-
-              <label class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2.5 py-1.5">
-                <p class="truncate text-xs font-medium">代码块</p>
-                <Switch v-model="preferences.preserveCodeBlock" />
-              </label>
             </div>
 
             <datalist id="unordered-list-bullet-suggestions">
@@ -327,6 +422,20 @@ function restoreDefaultPreferences() {
             <datalist id="code-block-label-suggestions">
               <option
                 v-for="option in codeBlockLabelSuggestions"
+                :key="option"
+                :value="option"
+              />
+            </datalist>
+            <datalist id="heading-affix-suggestions">
+              <option
+                v-for="option in headingAffixSuggestions"
+                :key="option"
+                :value="option"
+              />
+            </datalist>
+            <datalist id="heading-divider-suggestions">
+              <option
+                v-for="option in headingDividerSuggestions"
                 :key="option"
                 :value="option"
               />

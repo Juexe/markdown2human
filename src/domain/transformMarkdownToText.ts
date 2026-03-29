@@ -58,7 +58,7 @@ function renderBlocks(children: Root['children'] | BlockContent[], preferences: 
 function renderBlock(node: Content, preferences: OutputPreferences, blockGap: string): string {
   switch (node.type) {
     case 'heading':
-      return renderHeading(node)
+      return renderHeading(node, preferences)
     case 'paragraph':
       return renderParagraph(node, preferences)
     case 'list':
@@ -82,18 +82,14 @@ function renderBlock(node: Content, preferences: OutputPreferences, blockGap: st
   }
 }
 
-function renderHeading(node: Heading): string {
+function renderHeading(node: Heading, preferences: OutputPreferences): string {
   const text = normalizeInlineText(renderInline(node.children))
 
   if (!text) {
     return ''
   }
 
-  if (node.depth === 1) {
-    return `${text}\n${'='.repeat(Math.max(text.length, 3))}`
-  }
-
-  return text
+  return formatHeading(text, node.depth, preferences)
 }
 
 function renderParagraph(node: Paragraph, preferences: OutputPreferences): string {
@@ -345,4 +341,41 @@ function decodeEscapes(value: string): string {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
+}
+
+function formatHeading(text: string, depth: Heading['depth'], preferences: OutputPreferences): string {
+  const headingDepth: 1 | 2 | 3 = depth >= 3 ? 3 : (depth as 1 | 2)
+  const prefix = decodeEscapes(getHeadingPreference(preferences, headingDepth, 'prefix')).trim()
+  const suffix = decodeEscapes(getHeadingPreference(preferences, headingDepth, 'suffix')).trim()
+  const divider = resolveHeadingDivider(getHeadingPreference(preferences, headingDepth, 'divider'), text)
+  const content = `${prefix}${text}${suffix}`.trim()
+
+  return divider ? `${content}\n${divider}` : content
+}
+
+function getHeadingPreference(
+  preferences: OutputPreferences,
+  level: 1 | 2 | 3,
+  type: 'prefix' | 'suffix' | 'divider',
+): string {
+  const key = `headingLevel${level}${capitalize(type)}` as keyof OutputPreferences
+  return preferences[key] as string
+}
+
+function resolveHeadingDivider(value: string, text: string): string {
+  const divider = decodeEscapes(value).trim()
+
+  if (!divider) {
+    return ''
+  }
+
+  if (divider.toLowerCase() === 'auto') {
+    return '='.repeat(Math.max(text.length, 3))
+  }
+
+  return divider
+}
+
+function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1)
 }
