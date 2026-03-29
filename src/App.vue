@@ -27,7 +27,7 @@ import { defaultOutputPreferences } from '@/domain/storage'
 
 const markdownSource = ref('')
 const outputText = ref('')
-const showAdvancedSettings = ref(false)
+const showSettings = ref(true)
 const pasteState = ref<'idle' | 'success' | 'error'>('idle')
 const pasteMessage = ref('')
 let pasteResetTimer: number | undefined
@@ -141,51 +141,75 @@ function restoreDefaultPreferences() {
 <template>
   <div class="min-h-screen bg-[linear-gradient(180deg,#f7f4ee_0%,#f5f7fb_55%,#ffffff_100%)]">
     <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
-      <Card class="border-white/70 bg-white/80 shadow-sm backdrop-blur">
-        <CardContent class="space-y-2 py-2">
-          <div class="flex min-w-0 items-center gap-3">
-            <p class="shrink-0 text-xs font-medium tracking-[0.24em] text-muted-foreground uppercase">
-              md2human
-            </p>
-            <span class="h-4 w-px shrink-0 bg-border" />
-            <h1 class="min-w-0 truncate font-sans text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-              把 Markdown 整理成更适合转发的纯文本
-            </h1>
-          </div>
+      <div class="flex min-w-0 items-center gap-3 px-1">
+        <p class="shrink-0 text-xs font-medium tracking-[0.24em] text-muted-foreground uppercase">
+          md2human
+        </p>
+        <span class="h-4 w-px shrink-0 bg-border" />
+        <h1 class="min-w-0 truncate font-sans text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+          把 Markdown 整理成更适合转发的纯文本
+        </h1>
+      </div>
 
-          <div class="overflow-x-auto">
-            <div class="flex min-w-max items-center gap-3">
-              <CardTitle class="shrink-0 text-sm font-semibold">
+      <Card class="border-white/70 bg-white/80 shadow-sm backdrop-blur">
+        <CardHeader class="gap-0 py-3">
+          <div class="flex items-center justify-between gap-3">
+            <button
+              class="flex min-w-0 items-center gap-2 text-left"
+              type="button"
+              @click="showSettings = !showSettings"
+            >
+              <ChevronDown class="size-4 shrink-0 transition-transform" :class="showSettings ? 'rotate-0' : '-rotate-90'" />
+              <CardTitle class="truncate text-sm font-semibold">
                 输出设置
               </CardTitle>
-              <span class="h-4 w-px shrink-0 bg-border" />
+            </button>
 
-              <div class="flex shrink-0 items-center gap-2">
-                <Label for="unordered-list-bullet" class="shrink-0 text-xs text-muted-foreground">列表符号</Label>
+            <Button
+              :disabled="isDefaultPreferences"
+              size="icon-sm"
+              title="恢复默认设置"
+              variant="outline"
+              @click="restoreDefaultPreferences"
+            >
+              <RotateCcw />
+              <span class="sr-only">恢复默认设置</span>
+            </Button>
+          </div>
+        </CardHeader>
+
+        <CardContent v-if="showSettings" class="space-y-4 pt-0">
+          <section class="space-y-2">
+            <p class="text-xs font-medium text-muted-foreground">
+              基础设置
+            </p>
+            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div class="space-y-1.5">
+                <Label for="unordered-list-bullet" class="text-xs text-muted-foreground">列表符号</Label>
                 <Input
                   id="unordered-list-bullet"
                   v-model="preferences.unorderedListBullet"
-                  class="h-8 w-20 bg-white/70 font-mono"
+                  class="h-8 bg-white/70 font-mono"
                   list="unordered-list-bullet-suggestions"
                   spellcheck="false"
                 />
               </div>
 
-              <div class="flex shrink-0 items-center gap-2">
-                <Label for="table-separator" class="shrink-0 text-xs text-muted-foreground">表格分隔</Label>
+              <div class="space-y-1.5">
+                <Label for="table-separator" class="text-xs text-muted-foreground">表格分隔</Label>
                 <Input
                   id="table-separator"
                   v-model="preferences.tableSeparator"
-                  class="h-8 w-24 bg-white/70 font-mono"
+                  class="h-8 bg-white/70 font-mono"
                   list="table-separator-suggestions"
                   spellcheck="false"
                 />
               </div>
 
-              <div class="flex shrink-0 items-center gap-2">
-                <Label for="paragraph-spacing" class="shrink-0 text-xs text-muted-foreground">段落间距</Label>
+              <div class="space-y-1.5">
+                <Label for="paragraph-spacing" class="text-xs text-muted-foreground">段落间距</Label>
                 <Select v-model="preferences.paragraphSpacing">
-                  <SelectTrigger id="paragraph-spacing" class="h-8 w-24 bg-white/70 text-xs">
+                  <SelectTrigger id="paragraph-spacing" class="h-8 bg-white/70 text-xs">
                     <SelectValue placeholder="段落间距" />
                   </SelectTrigger>
                   <SelectContent>
@@ -200,182 +224,129 @@ function restoreDefaultPreferences() {
                 </Select>
               </div>
 
-              <label class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2.5 py-1.5">
+              <div class="space-y-1.5">
+                <Label for="ordered-list-suffix" class="text-xs text-muted-foreground">编号后缀</Label>
+                <Input
+                  id="ordered-list-suffix"
+                  v-model="preferences.orderedListSuffix"
+                  class="h-8 bg-white/70 font-mono"
+                  list="ordered-list-suffix-suggestions"
+                  spellcheck="false"
+                />
+              </div>
+            </div>
+
+            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <label class="flex items-center justify-between gap-2 rounded-md border bg-background/70 px-3 py-2">
                 <p class="truncate text-xs font-medium">有序编号</p>
                 <Switch v-model="preferences.preserveOrderedListNumber" />
               </label>
 
-              <label class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2.5 py-1.5">
+              <label class="flex items-center justify-between gap-2 rounded-md border bg-background/70 px-3 py-2">
                 <p class="truncate text-xs font-medium">链接地址</p>
                 <Switch v-model="preferences.preserveLinkUrl" />
               </label>
 
-              <div class="min-w-4 flex-1" />
+              <label class="flex items-center justify-between gap-2 rounded-md border bg-background/70 px-3 py-2">
+                <p class="truncate text-xs font-medium">图片说明</p>
+                <Switch v-model="preferences.preserveImageAlt" />
+              </label>
 
-              <Button
-                size="sm"
-                variant="outline"
-                @click="showAdvancedSettings = !showAdvancedSettings"
-              >
-                高级设置
-                <ChevronDown class="transition-transform" :class="showAdvancedSettings ? 'rotate-180' : ''" />
-              </Button>
-
-              <Button
-                :disabled="isDefaultPreferences"
-                size="icon-sm"
-                title="恢复默认设置"
-                variant="outline"
-                @click="restoreDefaultPreferences"
-              >
-                <RotateCcw />
-                <span class="sr-only">恢复默认设置</span>
-              </Button>
+              <label class="flex items-center justify-between gap-2 rounded-md border bg-background/70 px-3 py-2">
+                <p class="truncate text-xs font-medium">代码块</p>
+                <Switch v-model="preferences.preserveCodeBlock" />
+              </label>
             </div>
-          </div>
+          </section>
 
-          <div v-if="showAdvancedSettings" class="space-y-2 border-t border-border/70 pt-2">
-            <div class="overflow-x-auto">
-              <div class="flex min-w-max items-center gap-3">
-                <div class="flex shrink-0 items-center gap-2">
-                  <Label for="ordered-list-suffix" class="shrink-0 text-xs text-muted-foreground">编号后缀</Label>
-                  <Input
-                    id="ordered-list-suffix"
-                    v-model="preferences.orderedListSuffix"
-                    class="h-8 w-20 bg-white/70 font-mono"
-                    list="ordered-list-suffix-suggestions"
-                    spellcheck="false"
-                  />
-                </div>
-
-                <div class="flex shrink-0 items-center gap-2">
-                  <Label for="quote-prefix" class="shrink-0 text-xs text-muted-foreground">引用前缀</Label>
-                  <Input
-                    id="quote-prefix"
-                    v-model="preferences.quotePrefix"
-                    class="h-8 w-24 bg-white/70 font-mono"
-                    list="quote-prefix-suggestions"
-                    spellcheck="false"
-                  />
-                </div>
-
-                <div class="flex shrink-0 items-center gap-2">
-                  <Label for="image-label" class="shrink-0 text-xs text-muted-foreground">图片标签</Label>
-                  <Input
-                    id="image-label"
-                    v-model="preferences.imageLabel"
-                    class="h-8 w-24 bg-white/70 font-mono"
-                    list="image-label-suggestions"
-                    spellcheck="false"
-                  />
-                </div>
-
-                <div class="flex shrink-0 items-center gap-2">
-                  <Label for="code-block-label" class="shrink-0 text-xs text-muted-foreground">代码标签</Label>
-                  <Input
-                    id="code-block-label"
-                    v-model="preferences.codeBlockLabel"
-                    class="h-8 w-24 bg-white/70 font-mono"
-                    list="code-block-label-suggestions"
-                    spellcheck="false"
-                  />
-                </div>
-
-                <label class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2.5 py-1.5">
-                  <p class="truncate text-xs font-medium">图片说明</p>
-                  <Switch v-model="preferences.preserveImageAlt" />
-                </label>
-
-                <label class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2.5 py-1.5">
-                  <p class="truncate text-xs font-medium">代码块</p>
-                  <Switch v-model="preferences.preserveCodeBlock" />
-                </label>
-              </div>
-            </div>
-
-            <div class="overflow-x-auto">
-              <div class="flex min-w-max items-center gap-3">
-                <p class="shrink-0 text-xs font-medium text-muted-foreground">标题</p>
-                <span class="h-4 w-px shrink-0 bg-border" />
-
-                <div class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2 py-1.5">
-                  <p class="text-xs font-medium">H1</p>
+          <section class="space-y-2 pt-1">
+            <p class="text-xs font-medium text-muted-foreground">
+              标题格式
+            </p>
+            <div class="grid gap-3 xl:grid-cols-3">
+              <div class="space-y-2 rounded-md border bg-background/70 p-3">
+                <p class="text-xs font-medium">一级标题</p>
+                <div class="grid gap-2 sm:grid-cols-3">
                   <Input
                     v-model="preferences.headingLevel1Prefix"
                     aria-label="一级标题前缀"
-                    class="h-8 w-14 bg-white/70 font-mono"
+                    class="h-8 bg-white/70 font-mono"
                     list="heading-affix-suggestions"
-                    placeholder="前"
+                    placeholder="前缀"
                     spellcheck="false"
                   />
                   <Input
                     v-model="preferences.headingLevel1Suffix"
                     aria-label="一级标题后缀"
-                    class="h-8 w-14 bg-white/70 font-mono"
+                    class="h-8 bg-white/70 font-mono"
                     list="heading-affix-suggestions"
-                    placeholder="后"
+                    placeholder="后缀"
                     spellcheck="false"
                   />
                   <Input
                     v-model="preferences.headingLevel1Divider"
                     aria-label="一级标题分隔行"
-                    class="h-8 w-36 bg-white/70 font-mono"
+                    class="h-8 bg-white/70 font-mono"
                     list="heading-divider-suggestions"
                     placeholder="分隔行"
                     spellcheck="false"
                   />
                 </div>
+              </div>
 
-                <div class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2 py-1.5">
-                  <p class="text-xs font-medium">H2</p>
+              <div class="space-y-2 rounded-md border bg-background/70 p-3">
+                <p class="text-xs font-medium">二级标题</p>
+                <div class="grid gap-2 sm:grid-cols-3">
                   <Input
                     v-model="preferences.headingLevel2Prefix"
                     aria-label="二级标题前缀"
-                    class="h-8 w-14 bg-white/70 font-mono"
+                    class="h-8 bg-white/70 font-mono"
                     list="heading-affix-suggestions"
-                    placeholder="前"
+                    placeholder="前缀"
                     spellcheck="false"
                   />
                   <Input
                     v-model="preferences.headingLevel2Suffix"
                     aria-label="二级标题后缀"
-                    class="h-8 w-14 bg-white/70 font-mono"
+                    class="h-8 bg-white/70 font-mono"
                     list="heading-affix-suggestions"
-                    placeholder="后"
+                    placeholder="后缀"
                     spellcheck="false"
                   />
                   <Input
                     v-model="preferences.headingLevel2Divider"
                     aria-label="二级标题分隔行"
-                    class="h-8 w-36 bg-white/70 font-mono"
+                    class="h-8 bg-white/70 font-mono"
                     list="heading-divider-suggestions"
                     placeholder="分隔行"
                     spellcheck="false"
                   />
                 </div>
+              </div>
 
-                <div class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2 py-1.5">
-                  <p class="text-xs font-medium">H3</p>
+              <div class="space-y-2 rounded-md border bg-background/70 p-3">
+                <p class="text-xs font-medium">三级标题</p>
+                <div class="grid gap-2 sm:grid-cols-3">
                   <Input
                     v-model="preferences.headingLevel3Prefix"
                     aria-label="三级标题前缀"
-                    class="h-8 w-14 bg-white/70 font-mono"
+                    class="h-8 bg-white/70 font-mono"
                     list="heading-affix-suggestions"
-                    placeholder="前"
+                    placeholder="前缀"
                     spellcheck="false"
                   />
                   <Input
                     v-model="preferences.headingLevel3Suffix"
                     aria-label="三级标题后缀"
-                    class="h-8 w-14 bg-white/70 font-mono"
+                    class="h-8 bg-white/70 font-mono"
                     list="heading-affix-suggestions"
-                    placeholder="后"
+                    placeholder="后缀"
                     spellcheck="false"
                   />
                   <Input
                     v-model="preferences.headingLevel3Divider"
                     aria-label="三级标题分隔行"
-                    class="h-8 w-36 bg-white/70 font-mono"
+                    class="h-8 bg-white/70 font-mono"
                     list="heading-divider-suggestions"
                     placeholder="分隔行"
                     spellcheck="false"
@@ -383,64 +354,104 @@ function restoreDefaultPreferences() {
                 </div>
               </div>
             </div>
+          </section>
 
-            <datalist id="unordered-list-bullet-suggestions">
-              <option
-                v-for="option in unorderedListBulletSuggestions"
-                :key="option"
-                :value="option"
-              />
-            </datalist>
-            <datalist id="ordered-list-suffix-suggestions">
-              <option
-                v-for="option in orderedListSuffixSuggestions"
-                :key="option"
-                :value="option"
-              />
-            </datalist>
-            <datalist id="table-separator-suggestions">
-              <option
-                v-for="option in tableSeparatorSuggestions"
-                :key="option"
-                :value="option"
-              />
-            </datalist>
-            <datalist id="quote-prefix-suggestions">
-              <option
-                v-for="option in quotePrefixSuggestions"
-                :key="option"
-                :value="option"
-              />
-            </datalist>
-            <datalist id="image-label-suggestions">
-              <option
-                v-for="option in imageLabelSuggestions"
-                :key="option"
-                :value="option"
-              />
-            </datalist>
-            <datalist id="code-block-label-suggestions">
-              <option
-                v-for="option in codeBlockLabelSuggestions"
-                :key="option"
-                :value="option"
-              />
-            </datalist>
-            <datalist id="heading-affix-suggestions">
-              <option
-                v-for="option in headingAffixSuggestions"
-                :key="option"
-                :value="option"
-              />
-            </datalist>
-            <datalist id="heading-divider-suggestions">
-              <option
-                v-for="option in headingDividerSuggestions"
-                :key="option"
-                :value="option"
-              />
-            </datalist>
-          </div>
+          <section class="space-y-2 pt-1">
+            <p class="text-xs font-medium text-muted-foreground">
+              其他格式
+            </p>
+            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div class="space-y-1.5">
+                <Label for="quote-prefix" class="text-xs text-muted-foreground">引用前缀</Label>
+                <Input
+                  id="quote-prefix"
+                  v-model="preferences.quotePrefix"
+                  class="h-8 bg-white/70 font-mono"
+                  list="quote-prefix-suggestions"
+                  spellcheck="false"
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <Label for="image-label" class="text-xs text-muted-foreground">图片标签</Label>
+                <Input
+                  id="image-label"
+                  v-model="preferences.imageLabel"
+                  class="h-8 bg-white/70 font-mono"
+                  list="image-label-suggestions"
+                  spellcheck="false"
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <Label for="code-block-label" class="text-xs text-muted-foreground">代码标签</Label>
+                <Input
+                  id="code-block-label"
+                  v-model="preferences.codeBlockLabel"
+                  class="h-8 bg-white/70 font-mono"
+                  list="code-block-label-suggestions"
+                  spellcheck="false"
+                />
+              </div>
+            </div>
+          </section>
+
+          <datalist id="unordered-list-bullet-suggestions">
+            <option
+              v-for="option in unorderedListBulletSuggestions"
+              :key="option"
+              :value="option"
+            />
+          </datalist>
+          <datalist id="ordered-list-suffix-suggestions">
+            <option
+              v-for="option in orderedListSuffixSuggestions"
+              :key="option"
+              :value="option"
+            />
+          </datalist>
+          <datalist id="table-separator-suggestions">
+            <option
+              v-for="option in tableSeparatorSuggestions"
+              :key="option"
+              :value="option"
+            />
+          </datalist>
+          <datalist id="quote-prefix-suggestions">
+            <option
+              v-for="option in quotePrefixSuggestions"
+              :key="option"
+              :value="option"
+            />
+          </datalist>
+          <datalist id="image-label-suggestions">
+            <option
+              v-for="option in imageLabelSuggestions"
+              :key="option"
+              :value="option"
+            />
+          </datalist>
+          <datalist id="code-block-label-suggestions">
+            <option
+              v-for="option in codeBlockLabelSuggestions"
+              :key="option"
+              :value="option"
+            />
+          </datalist>
+          <datalist id="heading-affix-suggestions">
+            <option
+              v-for="option in headingAffixSuggestions"
+              :key="option"
+              :value="option"
+            />
+          </datalist>
+          <datalist id="heading-divider-suggestions">
+            <option
+              v-for="option in headingDividerSuggestions"
+              :key="option"
+              :value="option"
+            />
+          </datalist>
         </CardContent>
       </Card>
 
