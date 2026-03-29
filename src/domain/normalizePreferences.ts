@@ -1,4 +1,4 @@
-import type { OutputPreferences } from '@/types/preferences'
+import type { OutputPreferences, TableRenderMode } from '@/types/preferences'
 import { defaultOutputPreferences } from '@/domain/storage'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -13,6 +13,12 @@ function normalizeTextPreference(value: unknown, fallback: string): string {
   return value
 }
 
+function normalizeTableRenderMode(value: unknown): TableRenderMode {
+  return value === 'simple' || value === 'keyValue' || value === 'lead' || value === 'dsl'
+    ? value
+    : defaultOutputPreferences.tableRenderMode
+}
+
 export function normalizePreferences(raw: unknown): OutputPreferences {
   if (!isRecord(raw)) {
     return { ...defaultOutputPreferences }
@@ -22,6 +28,17 @@ export function normalizePreferences(raw: unknown): OutputPreferences {
     unorderedListBullet: normalizeTextPreference(raw.unorderedListBullet, defaultOutputPreferences.unorderedListBullet),
     orderedListSuffix: normalizeTextPreference(raw.orderedListSuffix, defaultOutputPreferences.orderedListSuffix),
     tableSeparator: normalizeTextPreference(raw.tableSeparator, defaultOutputPreferences.tableSeparator),
+    tableRenderMode: normalizeTableRenderMode(raw.tableRenderMode),
+    tableDslTemplate: normalizeTextPreference(raw.tableDslTemplate, defaultOutputPreferences.tableDslTemplate),
+    tablePairSeparator: normalizeTextPreference(raw.tablePairSeparator, defaultOutputPreferences.tablePairSeparator),
+    tableKeyValueSeparator: normalizeTextPreference(raw.tableKeyValueSeparator, defaultOutputPreferences.tableKeyValueSeparator),
+    tableRowSuffix: normalizeTextPreference(raw.tableRowSuffix, defaultOutputPreferences.tableRowSuffix),
+    tableUseHeaderRow: typeof raw.tableUseHeaderRow === 'boolean'
+      ? raw.tableUseHeaderRow
+      : defaultOutputPreferences.tableUseHeaderRow,
+    tableSkipEmptyCells: typeof raw.tableSkipEmptyCells === 'boolean'
+      ? raw.tableSkipEmptyCells
+      : defaultOutputPreferences.tableSkipEmptyCells,
     paragraphSpacing: normalizeTextPreference(raw.paragraphSpacing, defaultOutputPreferences.paragraphSpacing),
     headingLevel1Prefix: normalizeTextPreference(raw.headingLevel1Prefix, defaultOutputPreferences.headingLevel1Prefix),
     headingLevel1Suffix: normalizeTextPreference(raw.headingLevel1Suffix, defaultOutputPreferences.headingLevel1Suffix),

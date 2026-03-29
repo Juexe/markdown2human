@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { OutputPreferences } from '@/types/preferences'
+import type { OutputPreferences, TableRenderMode } from '@/types/preferences'
 import {
   FolderOpen,
   Heading,
@@ -48,7 +48,6 @@ type TextPreferenceKey = keyof Pick<
   OutputPreferences,
   | 'unorderedListBullet'
   | 'orderedListSuffix'
-  | 'tableSeparator'
   | 'quotePrefix'
   | 'imageLabel'
   | 'codeBlockLabel'
@@ -86,6 +85,12 @@ interface HeadingFieldGroup {
   hint: string
 }
 
+interface TableModeOption {
+  description: string
+  label: string
+  value: TableRenderMode
+}
+
 const markdownSource = ref('')
 const outputText = ref('')
 const settingsDialogOpen = ref(false)
@@ -115,9 +120,45 @@ const paragraphSpacingOptions = [
   { label: '更宽', value: 'wide' },
 ] as const
 
+const tableRenderModeOptions = [
+  {
+    value: 'simple',
+    label: '简单分列',
+    description: '每一行只拼接值，适合快速导出。',
+  },
+  {
+    value: 'keyValue',
+    label: '键值对',
+    description: '按 表头:值 展开，最适合聊天转发。',
+  },
+  {
+    value: 'lead',
+    label: '首列主语',
+    description: '第一列作为主语，后续列转成键值对。',
+  },
+  {
+    value: 'dsl',
+    label: '自定义 DSL',
+    description: '按模板完全自定义每一行的结构。',
+  },
+] as const satisfies readonly TableModeOption[]
+
+const tableDslExamples = [
+  '{pairs}',
+  '{col:1}{if:2}：{pairs:2..|， | = }{end}',
+  '{if:备注}备注：{col:备注}{end}',
+] as const
+
 const settingHints = {
   unorderedListBullet: '无序列表项使用的前导符号，例如 -, *, •。',
-  tableSeparator: '表格每列之间插入的分隔内容，可直接输入空格、逗号或 \\t。',
+  tableSeparator: '简单分列模式和 DSL 中 {cols} 使用的列分隔内容，可直接输入空格、逗号或 \\t。',
+  tableRenderMode: '普通用户直接选择预设；切到自定义 DSL 后可以自己决定每一行怎么组织。',
+  tablePairSeparator: '预设键值对、首列主语，以及 DSL 中 {pairs} 默认使用的项间分隔符。',
+  tableKeyValueSeparator: '表头和单元格值之间的连接符，预设和 DSL 中 {kv}/{pairs} 默认使用它。',
+  tableRowSuffix: '每一行渲染完成后追加的尾部内容，例如 。、； 或 \\n。',
+  tableUseHeaderRow: '开启后用表格第一行当表头，关闭后自动生成 列1、列2、列3。',
+  tableSkipEmptyCells: '开启后会忽略空单元格，避免输出残缺的 键: 值 片段。',
+  tableDslTemplate: '支持 {col:1}、{col:列名}、{header:1}、{kv:2}、{cols}、{pairs}、{pairs:2..}、{if:备注}...{end}。',
   paragraphSpacing: '控制段落块之间保留的空行数量。',
   orderedListSuffix: '有序列表数字后的后缀，例如 .、)、、。',
   preserveOrderedListNumber: '关闭后，有序列表会按无序列表符号输出。',
@@ -126,7 +167,7 @@ const settingHints = {
   preserveCodeBlock: '关闭后，代码块整段忽略不输出。',
   headingLevel1Prefix: '一级标题正文前插入的内容，例如 《。',
   headingLevel1Suffix: '一级标题正文后插入的内容，例如 》。',
-  headingLevel1Divider: '一级标题下方附加的分隔行，auto 表示按标题长度自动生成。',
+  headingLevel1Divider: '一级标题下方附加的分隔行，留空则不输出。',
   headingLevel2Prefix: '二级标题正文前插入的内容。',
   headingLevel2Suffix: '二级标题正文后插入的内容。',
   headingLevel2Divider: '二级标题下方附加的分隔行，留空则不输出。',
@@ -152,13 +193,6 @@ const baseTextFields = [
     label: '编号后缀',
     hint: settingHints.orderedListSuffix,
     placeholder: '.',
-  },
-  {
-    id: 'table-separator',
-    key: 'tableSeparator',
-    label: '表格分隔',
-    hint: settingHints.tableSeparator,
-    placeholder: ' | ',
   },
 ] as const satisfies readonly TextFieldConfig[]
 
@@ -248,6 +282,12 @@ const isDefaultPreferences = computed(
 
 const changedPreferencesCount = computed(
   () => preferenceKeys.filter((key) => preferences.value[key] !== defaultOutputPreferences[key]).length,
+)
+
+const isCustomTableDslMode = computed(() => preferences.value.tableRenderMode === 'dsl')
+
+const selectedTableModeDescription = computed(
+  () => tableRenderModeOptions.find((option) => option.value === preferences.value.tableRenderMode)?.description ?? '',
 )
 
 const copyButtonLabel = computed(() => {
@@ -544,6 +584,157 @@ function labelClass() {
                     :placeholder="field.placeholder"
                     spellcheck="false"
                   />
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-border/70 bg-white/78 p-4">
+                <div class="space-y-1">
+                  <p class="flex items-center gap-1 text-sm font-semibold text-foreground">
+                    <span>表格</span>
+                    <SettingHint :text="settingHints.tableRenderMode" class="size-5" />
+                  </p>
+                  <p class="text-xs leading-5 text-muted-foreground">
+                    普通用户选预设即可，高级用户可以直接写 DSL 模板。
+                  </p>
+                </div>
+
+                <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <div class="space-y-1.5">
+                    <Label for="table-render-mode" :class="labelClass()">
+                      <span>输出模式</span>
+                      <SettingHint :text="settingHints.tableRenderMode" />
+                    </Label>
+                    <Select v-model="preferences.tableRenderMode">
+                      <SelectTrigger id="table-render-mode" class="h-9 bg-background/80 text-xs">
+                        <SelectValue placeholder="输出模式" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem
+                          v-for="option in tableRenderModeOptions"
+                          :key="option.value"
+                          :value="option.value"
+                        >
+                          {{ option.label }}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p class="text-xs leading-5 text-muted-foreground">{{ selectedTableModeDescription }}</p>
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <Label for="table-separator" :class="labelClass()">
+                      <span>列分隔</span>
+                      <SettingHint :text="settingHints.tableSeparator" />
+                    </Label>
+                    <Input
+                      id="table-separator"
+                      v-model="preferences.tableSeparator"
+                      class="h-9 bg-background/80 font-mono"
+                      placeholder=" | "
+                      spellcheck="false"
+                    />
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <Label for="table-pair-separator" :class="labelClass()">
+                      <span>项间分隔</span>
+                      <SettingHint :text="settingHints.tablePairSeparator" />
+                    </Label>
+                    <Input
+                      id="table-pair-separator"
+                      v-model="preferences.tablePairSeparator"
+                      class="h-9 bg-background/80 font-mono"
+                      placeholder="，"
+                      spellcheck="false"
+                    />
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <Label for="table-key-value-separator" :class="labelClass()">
+                      <span>键值分隔</span>
+                      <SettingHint :text="settingHints.tableKeyValueSeparator" />
+                    </Label>
+                    <Input
+                      id="table-key-value-separator"
+                      v-model="preferences.tableKeyValueSeparator"
+                      class="h-9 bg-background/80 font-mono"
+                      placeholder="："
+                      spellcheck="false"
+                    />
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <Label for="table-row-suffix" :class="labelClass()">
+                      <span>行末分隔</span>
+                      <SettingHint :text="settingHints.tableRowSuffix" />
+                    </Label>
+                    <Input
+                      id="table-row-suffix"
+                      v-model="preferences.tableRowSuffix"
+                      class="h-9 bg-background/80 font-mono"
+                      placeholder="。"
+                      spellcheck="false"
+                    />
+                  </div>
+                </div>
+
+                <div class="mt-3 grid gap-3 md:grid-cols-2">
+                  <label class="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-background/60 px-3 py-3">
+                    <div class="min-w-0 space-y-1">
+                      <p class="flex items-center gap-1 text-xs font-medium text-foreground">
+                        <span>首行作为表头</span>
+                        <SettingHint :text="settingHints.tableUseHeaderRow" />
+                      </p>
+                      <p class="text-xs leading-5 text-muted-foreground">决定 DSL 是否按第一行的列名取值。</p>
+                    </div>
+                    <Switch v-model="preferences.tableUseHeaderRow" />
+                  </label>
+
+                  <label class="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-background/60 px-3 py-3">
+                    <div class="min-w-0 space-y-1">
+                      <p class="flex items-center gap-1 text-xs font-medium text-foreground">
+                        <span>跳过空单元格</span>
+                        <SettingHint :text="settingHints.tableSkipEmptyCells" />
+                      </p>
+                      <p class="text-xs leading-5 text-muted-foreground">避免输出空的键值片段或多余分隔符。</p>
+                    </div>
+                    <Switch v-model="preferences.tableSkipEmptyCells" />
+                  </label>
+                </div>
+
+                <div v-if="isCustomTableDslMode" class="mt-3 space-y-2 rounded-xl border border-dashed border-border/80 bg-background/60 p-3">
+                  <Label for="table-dsl-template" :class="labelClass()">
+                    <span>DSL 模板</span>
+                    <SettingHint :text="settingHints.tableDslTemplate" />
+                  </Label>
+                  <Textarea
+                    id="table-dsl-template"
+                    v-model="preferences.tableDslTemplate"
+                    class="min-h-28 resize-y bg-background/80 font-mono text-xs leading-6"
+                    placeholder="{pairs}"
+                    spellcheck="false"
+                  />
+                  <p class="text-xs leading-5 text-muted-foreground">
+                    可用占位符：<code class="rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{col:1}</code>
+                    <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{col:列名}</code>
+                    <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{kv:2}</code>
+                    <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{cols}</code>
+                    <code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{pairs:2..}</code>
+                  </p>
+                  <p class="text-xs leading-5 text-muted-foreground">
+                    条件块：<code class="rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{if:备注}...{end}</code>
+                    ，重写分隔符：<code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{pairs:2..|， | = }</code>
+                  </p>
+                  <p class="text-xs leading-5 text-muted-foreground">
+                    例子：
+                    <code
+                      v-for="example in tableDslExamples"
+                      :key="example"
+                      class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground"
+                    >
+                      {{ example }}
+                    </code>
+                  </p>
                 </div>
               </div>
 

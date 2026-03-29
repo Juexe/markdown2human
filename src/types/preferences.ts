@@ -1,7 +1,16 @@
+export type TableRenderMode = 'simple' | 'keyValue' | 'lead' | 'dsl'
+
 export interface OutputPreferences {
   unorderedListBullet: string
   orderedListSuffix: string
   tableSeparator: string
+  tableRenderMode: TableRenderMode
+  tableDslTemplate: string
+  tablePairSeparator: string
+  tableKeyValueSeparator: string
+  tableRowSuffix: string
+  tableUseHeaderRow: boolean
+  tableSkipEmptyCells: boolean
   paragraphSpacing: string
   headingLevel1Prefix: string
   headingLevel1Suffix: string

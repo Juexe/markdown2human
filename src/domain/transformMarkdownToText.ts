@@ -15,11 +15,11 @@ import type {
   Root,
   Table,
   TableCell,
-  TableRow,
   Text,
 } from 'mdast'
 import type { OutputPreferences } from '@/types/preferences'
 import { parseMarkdown } from '@/domain/parseMarkdown'
+import { renderTableRows } from '@/domain/renderTableRows'
 
 const blockGapAliasMap: Record<string, number> = {
   compact: 2,
@@ -181,18 +181,10 @@ function renderCodeBlock(node: Code, preferences: OutputPreferences): string {
 }
 
 function renderTable(node: Table, preferences: OutputPreferences): string {
-  const separator = resolveSeparator(preferences.tableSeparator)
-
-  return node.children
-    .map((row) => renderTableRow(row, preferences, separator))
-    .filter(Boolean)
-    .join('\n')
-}
-
-function renderTableRow(row: TableRow, preferences: OutputPreferences, separator: string): string {
-  return row.children
-    .map((cell) => renderTableCell(cell, preferences))
-    .join(separator)
+  return renderTableRows(
+    node.children.map((row) => row.children.map((cell) => renderTableCell(cell, preferences))),
+    preferences,
+  )
 }
 
 function renderTableCell(cell: TableCell, preferences: OutputPreferences): string {
@@ -308,10 +300,6 @@ function resolveBlockGap(value: string): string {
   return '\n'.repeat(count)
 }
 
-function resolveSeparator(value: string): string {
-  return decodeEscapes(value) || ' | '
-}
-
 function formatListBullet(value: string): string {
   return decodeEscapes(value).trim() || '-'
 }
@@ -347,7 +335,7 @@ function formatHeading(text: string, depth: Heading['depth'], preferences: Outpu
   const headingDepth: 1 | 2 | 3 = depth >= 3 ? 3 : (depth as 1 | 2)
   const prefix = decodeEscapes(getHeadingPreference(preferences, headingDepth, 'prefix')).trim()
   const suffix = decodeEscapes(getHeadingPreference(preferences, headingDepth, 'suffix')).trim()
-  const divider = resolveHeadingDivider(getHeadingPreference(preferences, headingDepth, 'divider'), text)
+  const divider = resolveHeadingDivider(getHeadingPreference(preferences, headingDepth, 'divider'))
   const content = `${prefix}${text}${suffix}`.trim()
 
   return divider ? `${content}\n${divider}` : content
@@ -362,15 +350,11 @@ function getHeadingPreference(
   return preferences[key] as string
 }
 
-function resolveHeadingDivider(value: string, text: string): string {
+function resolveHeadingDivider(value: string): string {
   const divider = decodeEscapes(value).trim()
 
   if (!divider) {
     return ''
-  }
-
-  if (divider.toLowerCase() === 'auto') {
-    return '='.repeat(Math.max(text.length, 3))
   }
 
   return divider
