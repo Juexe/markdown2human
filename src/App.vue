@@ -522,8 +522,8 @@ function labelClass() {
         </footer>
       </main>
 
-      <DialogScrollContent class="max-w-6xl overflow-hidden border-white/70 bg-[#fbfaf6] p-0 shadow-2xl">
-        <DialogHeader class="border-b border-border/60 bg-white/88 px-6 py-5 backdrop-blur">
+      <DialogScrollContent class="max-w-6xl border-white/70 bg-[#fbfaf6] p-0 shadow-2xl">
+        <DialogHeader class="shrink-0 border-b border-border/60 bg-white/88 px-6 py-5 backdrop-blur">
           <div class="space-y-2">
             <DialogTitle class="flex items-center gap-2 text-base font-semibold">
               <Settings2 class="size-4" />
@@ -535,7 +535,7 @@ function labelClass() {
           </div>
         </DialogHeader>
 
-        <div class="px-6 py-6">
+        <div class="min-h-0 overflow-y-auto px-6 py-6 overscroll-contain">
           <div class="space-y-6">
             <section class="space-y-4">
               <div class="space-y-1">
