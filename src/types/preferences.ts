@@ -1,4 +1,5 @@
 export type TableRenderMode = 'simple' | 'keyValue' | 'dsl'
+export type ParagraphSpacing = 'compact' | 'normal' | 'relaxed'
 
 export interface OutputPreferences {
   unorderedListBullet: string
@@ -12,7 +13,7 @@ export interface OutputPreferences {
   tableRowSuffix: string
   tableUseHeaderRow: boolean
   tableSkipEmptyCells: boolean
-  paragraphSpacing: string
+  paragraphSpacing: ParagraphSpacing
   headingLevel1Prefix: string
   headingLevel1Suffix: string
   headingLevel1Divider: string

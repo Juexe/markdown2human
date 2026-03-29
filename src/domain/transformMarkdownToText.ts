@@ -17,18 +17,18 @@ import type {
   TableCell,
   Text,
 } from 'mdast'
-import type { OutputPreferences } from '@/types/preferences'
+import type { OutputPreferences, ParagraphSpacing } from '@/types/preferences'
 import { parseMarkdown } from '@/domain/parseMarkdown'
 import { renderTableRows } from '@/domain/renderTableRows'
 
-const blockGapAliasMap: Record<string, number> = {
-  compact: 2,
-  tight: 2,
-  normal: 3,
-  relaxed: 4,
-  loose: 4,
-  wide: 5,
+const blockGapMap: Record<ParagraphSpacing, string> = {
+  compact: '\n',
+  normal: '\n\n',
+  relaxed: '\n\n\n',
 }
+
+const compactSpacingAliases = new Set(['compact', 'tight', '0'])
+const relaxedSpacingAliases = new Set(['relaxed', 'loose', 'wide'])
 
 export function transformMarkdownToText(markdown: string, preferences: OutputPreferences): string {
   if (!markdown.trim()) {
@@ -41,7 +41,7 @@ export function transformMarkdownToText(markdown: string, preferences: OutputPre
 
   return blocks
     .join(blockGap)
-    .replace(/\n{7,}/g, '\n\n\n\n\n\n')
+    .replace(/\n{4,}/g, '\n\n\n')
     .trim()
 }
 
@@ -292,12 +292,26 @@ function normalizeInlineText(value: string): string {
 
 function resolveBlockGap(value: string): string {
   const normalized = value.trim().toLowerCase()
-  const parsed = Number.parseInt(normalized, 10)
-  const count = Number.isFinite(parsed)
-    ? clamp(parsed + 1, 2, 6)
-    : (blockGapAliasMap[normalized] ?? blockGapAliasMap.normal)
 
-  return '\n'.repeat(count)
+  if (compactSpacingAliases.has(normalized)) {
+    return blockGapMap.compact
+  }
+
+  if (relaxedSpacingAliases.has(normalized)) {
+    return blockGapMap.relaxed
+  }
+
+  const parsed = Number.parseInt(normalized, 10)
+
+  if (!Number.isNaN(parsed)) {
+    return parsed <= 0
+      ? blockGapMap.compact
+      : parsed === 1
+        ? blockGapMap.normal
+        : blockGapMap.relaxed
+  }
+
+  return blockGapMap.normal
 }
 
 function formatListBullet(value: string): string {
@@ -325,10 +339,6 @@ function decodeEscapes(value: string): string {
     .replace(/\\t/g, '\t')
     .replace(/\\n/g, '\n')
     .replace(/\\r/g, '\r')
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max)
 }
 
 function formatHeading(text: string, depth: Heading['depth'], preferences: OutputPreferences): string {

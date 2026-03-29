@@ -3,6 +3,8 @@ import { computed, ref, watch } from 'vue'
 import packageJson from '../package.json'
 import type { OutputPreferences, TableRenderMode } from '@/types/preferences'
 import {
+  ClipboardCopy,
+  ClipboardPaste,
   FolderOpen,
   Heading,
   ListTree,
@@ -117,24 +119,23 @@ const paragraphSpacingOptions = [
   { label: '紧凑', value: 'compact' },
   { label: '标准', value: 'normal' },
   { label: '宽松', value: 'relaxed' },
-  { label: '更宽', value: 'wide' },
 ] as const
 
 const tableRenderModeOptions = [
   {
     value: 'simple',
     label: '简单分列',
-    description: '每一行只拼接值，适合快速导出。',
+    // description: '每一行只拼接值，适合快速导出。',
   },
   {
     value: 'keyValue',
     label: '键值对',
-    description: '按 表头:值 展开，最适合聊天转发。',
+    // description: '按 表头:值 展开，最适合聊天转发。',
   },
   {
     value: 'dsl',
     label: '自定义 DSL',
-    description: '按模板完全自定义每一行的结构。',
+    // description: '按模板完全自定义每一行的结构。',
   },
 ] as const satisfies readonly TableModeOption[]
 
@@ -246,7 +247,7 @@ const mediaTextFields = [
 const headingGroups = [
   {
     title: '一级标题',
-    description: '适合文档主标题或文章标题。',
+    // description: '适合文档主标题或文章标题。',
     prefixKey: 'headingLevel1Prefix',
     suffixKey: 'headingLevel1Suffix',
     dividerKey: 'headingLevel1Divider',
@@ -269,6 +270,8 @@ const headingGroups = [
     hint: `${settingHints.headingLevel3Prefix} ${settingHints.headingLevel3Suffix} ${settingHints.headingLevel3Divider}`,
   },
 ] as const satisfies readonly HeadingFieldGroup[]
+
+const quickHeadingGroup = headingGroups[0]
 
 const preferenceKeys = Object.keys(defaultOutputPreferences) as Array<keyof OutputPreferences>
 
@@ -383,7 +386,7 @@ function labelClass() {
               </div>
             </div>
           </CardHeader>
-          <CardContent class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <CardContent class="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,2.3fr)]">
             <div class="space-y-1.5 rounded-xl border border-border/70 bg-background/75 p-3">
               <Label for="quick-paragraph-spacing" :class="labelClass()">
                 <span>段落间距</span>
@@ -402,40 +405,71 @@ function labelClass() {
             </div>
 
             <div class="space-y-1.5 rounded-xl border border-border/70 bg-background/75 p-3">
+              <Label for="quick-table-render-mode" :class="labelClass()">
+                <span>表格输出模式</span>
+                <SettingHint :text="settingHints.tableRenderMode" />
+              </Label>
+              <Select v-model="preferences.tableRenderMode">
+                <SelectTrigger id="quick-table-render-mode" class="h-9 bg-white/70 text-xs">
+                  <SelectValue placeholder="表格输出模式" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    v-for="option in tableRenderModeOptions"
+                    :key="option.value"
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p class="text-xs leading-5 text-muted-foreground">{{ selectedTableModeDescription }}</p>
+            </div>
+
+            <div class="space-y-1.5 rounded-xl border border-border/70 bg-background/75 p-3">
               <Label for="quick-unordered-list-bullet" :class="labelClass()">
                 <span>列表符号</span>
                 <SettingHint :text="settingHints.unorderedListBullet" />
               </Label>
               <Input
-                id="quick-unordered-list-bullet"
-                v-model="preferences.unorderedListBullet"
-                class="h-9 bg-white/70 font-mono"
-                placeholder="-"
-                spellcheck="false"
+                  id="quick-unordered-list-bullet"
+                  v-model="preferences.unorderedListBullet"
+                  class="h-9 bg-white/70 font-mono"
+                  placeholder="-"
+                  spellcheck="false"
               />
             </div>
 
-            <label class="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-background/75 px-3 py-3">
-              <div class="min-w-0 space-y-1">
-                <p class="flex items-center gap-1 text-xs font-medium text-foreground">
-                  <span>链接地址</span>
-                  <SettingHint :text="settingHints.preserveLinkUrl" />
-                </p>
-                <p class="text-xs leading-5 text-muted-foreground">转发时是否保留原始 URL</p>
-              </div>
-              <Switch v-model="preferences.preserveLinkUrl" />
-            </label>
+            <div class="space-y-1.5 rounded-xl border border-border/70 bg-background/75 p-3 md:col-span-2 xl:col-span-1">
+              <Label :class="labelClass()">
+                <span>{{ quickHeadingGroup.title }}</span>
+                <SettingHint :text="quickHeadingGroup.hint" />
+              </Label>
 
-            <label class="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-background/75 px-3 py-3">
-              <div class="min-w-0 space-y-1">
-                <p class="flex items-center gap-1 text-xs font-medium text-foreground">
-                  <span>代码块</span>
-                  <SettingHint :text="settingHints.preserveCodeBlock" />
-                </p>
-                <p class="text-xs leading-5 text-muted-foreground">控制代码块整段是否输出</p>
+              <div class="grid gap-2 sm:grid-cols-3">
+                <Input
+                  v-model="preferences[quickHeadingGroup.prefixKey]"
+                  aria-label="一级标题前缀"
+                  class="h-9 bg-white/70 font-mono"
+                  placeholder="前缀"
+                  spellcheck="false"
+                />
+                <Input
+                  v-model="preferences[quickHeadingGroup.suffixKey]"
+                  aria-label="一级标题后缀"
+                  class="h-9 bg-white/70 font-mono"
+                  placeholder="后缀"
+                  spellcheck="false"
+                />
+                <Input
+                  v-model="preferences[quickHeadingGroup.dividerKey]"
+                  aria-label="一级标题分隔线"
+                  class="h-9 bg-white/70 font-mono"
+                  placeholder="分隔线"
+                  spellcheck="false"
+                />
               </div>
-              <Switch v-model="preferences.preserveCodeBlock" />
-            </label>
+            </div>
           </CardContent>
         </Card>
 
@@ -452,6 +486,7 @@ function labelClass() {
                     打开
                   </Button>
                   <Button variant="outline" size="sm" @click="pasteMarkdown">
+                    <ClipboardPaste />
                     {{ pasteButtonLabel }}
                   </Button>
                 </div>
@@ -480,6 +515,7 @@ function labelClass() {
                   <CardTitle class="text-sm font-semibold">转换结果</CardTitle>
                 </div>
                 <Button size="sm" @click="copyText(outputText)">
+                  <ClipboardCopy />
                   {{ copyButtonLabel }}
                 </Button>
               </div>

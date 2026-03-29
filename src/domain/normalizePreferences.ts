@@ -1,4 +1,4 @@
-import type { OutputPreferences, TableRenderMode } from '@/types/preferences'
+import type { OutputPreferences, ParagraphSpacing, TableRenderMode } from '@/types/preferences'
 import { defaultOutputPreferences } from '@/domain/storage'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -17,6 +17,38 @@ function normalizeTableRenderMode(value: unknown): TableRenderMode {
   return value === 'simple' || value === 'keyValue' || value === 'dsl'
     ? value
     : defaultOutputPreferences.tableRenderMode
+}
+
+function normalizeParagraphSpacing(value: unknown): ParagraphSpacing {
+  if (value === 'compact' || value === 'normal' || value === 'relaxed') {
+    return value
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value <= 0 ? 'compact' : value === 1 ? 'normal' : 'relaxed'
+  }
+
+  if (typeof value !== 'string') {
+    return defaultOutputPreferences.paragraphSpacing
+  }
+
+  const normalized = value.trim().toLowerCase()
+
+  if (normalized === 'tight') {
+    return 'compact'
+  }
+
+  if (normalized === 'loose' || normalized === 'wide') {
+    return 'relaxed'
+  }
+
+  const parsed = Number.parseInt(normalized, 10)
+
+  if (!Number.isNaN(parsed)) {
+    return parsed <= 0 ? 'compact' : parsed === 1 ? 'normal' : 'relaxed'
+  }
+
+  return defaultOutputPreferences.paragraphSpacing
 }
 
 export function normalizePreferences(raw: unknown): OutputPreferences {
@@ -46,7 +78,7 @@ export function normalizePreferences(raw: unknown): OutputPreferences {
     tableSkipEmptyCells: typeof raw.tableSkipEmptyCells === 'boolean'
       ? raw.tableSkipEmptyCells
       : defaultOutputPreferences.tableSkipEmptyCells,
-    paragraphSpacing: normalizeTextPreference(raw.paragraphSpacing, defaultOutputPreferences.paragraphSpacing),
+    paragraphSpacing: normalizeParagraphSpacing(raw.paragraphSpacing),
     headingLevel1Prefix: normalizeTextPreference(raw.headingLevel1Prefix, defaultOutputPreferences.headingLevel1Prefix),
     headingLevel1Suffix: normalizeTextPreference(raw.headingLevel1Suffix, defaultOutputPreferences.headingLevel1Suffix),
     headingLevel1Divider: normalizeTextPreference(raw.headingLevel1Divider, defaultOutputPreferences.headingLevel1Divider),
