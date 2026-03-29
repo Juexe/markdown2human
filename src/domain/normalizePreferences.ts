@@ -1,12 +1,16 @@
 import type { OutputPreferences } from '@/types/preferences'
 import { defaultOutputPreferences } from '@/domain/storage'
 
-const unorderedListBullets = new Set<OutputPreferences['unorderedListBullet']>(['-', '*', '•'])
-const tableSeparators = new Set<OutputPreferences['tableSeparator']>(['pipe', 'space', 'tab'])
-const paragraphSpacings = new Set<OutputPreferences['paragraphSpacing']>(['compact', 'normal', 'relaxed'])
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
+}
+
+function normalizeTextPreference(value: unknown, fallback: string): string {
+  if (typeof value !== 'string') {
+    return fallback
+  }
+
+  return value
 }
 
 export function normalizePreferences(raw: unknown): OutputPreferences {
@@ -15,15 +19,13 @@ export function normalizePreferences(raw: unknown): OutputPreferences {
   }
 
   return {
-    unorderedListBullet: unorderedListBullets.has(raw.unorderedListBullet as OutputPreferences['unorderedListBullet'])
-      ? (raw.unorderedListBullet as OutputPreferences['unorderedListBullet'])
-      : defaultOutputPreferences.unorderedListBullet,
-    tableSeparator: tableSeparators.has(raw.tableSeparator as OutputPreferences['tableSeparator'])
-      ? (raw.tableSeparator as OutputPreferences['tableSeparator'])
-      : defaultOutputPreferences.tableSeparator,
-    paragraphSpacing: paragraphSpacings.has(raw.paragraphSpacing as OutputPreferences['paragraphSpacing'])
-      ? (raw.paragraphSpacing as OutputPreferences['paragraphSpacing'])
-      : defaultOutputPreferences.paragraphSpacing,
+    unorderedListBullet: normalizeTextPreference(raw.unorderedListBullet, defaultOutputPreferences.unorderedListBullet),
+    orderedListSuffix: normalizeTextPreference(raw.orderedListSuffix, defaultOutputPreferences.orderedListSuffix),
+    tableSeparator: normalizeTextPreference(raw.tableSeparator, defaultOutputPreferences.tableSeparator),
+    paragraphSpacing: normalizeTextPreference(raw.paragraphSpacing, defaultOutputPreferences.paragraphSpacing),
+    quotePrefix: normalizeTextPreference(raw.quotePrefix, defaultOutputPreferences.quotePrefix),
+    imageLabel: normalizeTextPreference(raw.imageLabel, defaultOutputPreferences.imageLabel),
+    codeBlockLabel: normalizeTextPreference(raw.codeBlockLabel, defaultOutputPreferences.codeBlockLabel),
     preserveOrderedListNumber: typeof raw.preserveOrderedListNumber === 'boolean'
       ? raw.preserveOrderedListNumber
       : defaultOutputPreferences.preserveOrderedListNumber,

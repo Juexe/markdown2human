@@ -21,16 +21,13 @@ import type {
 import type { OutputPreferences } from '@/types/preferences'
 import { parseMarkdown } from '@/domain/parseMarkdown'
 
-const blockGapMap: Record<OutputPreferences['paragraphSpacing'], string> = {
-  compact: '\n\n',
-  normal: '\n\n\n',
-  relaxed: '\n\n\n\n',
-}
-
-const tableSeparatorMap: Record<OutputPreferences['tableSeparator'], string> = {
-  pipe: ' | ',
-  space: '  ',
-  tab: '\t',
+const blockGapAliasMap: Record<string, number> = {
+  compact: 2,
+  tight: 2,
+  normal: 3,
+  relaxed: 4,
+  loose: 4,
+  wide: 5,
 }
 
 export function transformMarkdownToText(markdown: string, preferences: OutputPreferences): string {
@@ -39,12 +36,12 @@ export function transformMarkdownToText(markdown: string, preferences: OutputPre
   }
 
   const tree = parseMarkdown(markdown)
-  const blockGap = blockGapMap[preferences.paragraphSpacing]
+  const blockGap = resolveBlockGap(preferences.paragraphSpacing)
   const blocks = renderBlocks(tree.children, preferences, blockGap)
 
   return blocks
     .join(blockGap)
-    .replace(/\n{5,}/g, '\n\n\n\n')
+    .replace(/\n{7,}/g, '\n\n\n\n\n\n')
     .trim()
 }
 
@@ -67,7 +64,7 @@ function renderBlock(node: Content, preferences: OutputPreferences, blockGap: st
     case 'list':
       return renderList(node, preferences, 0)
     case 'blockquote':
-      return prefixLines(renderBlocks(node.children, preferences, blockGap).join(blockGap), '> ')
+      return prefixLines(renderBlocks(node.children, preferences, blockGap).join(blockGap), decodeEscapes(preferences.quotePrefix))
     case 'code':
       return renderCodeBlock(node, preferences)
     case 'table':
@@ -121,8 +118,8 @@ function renderListItem(
   const baseIndent = '  '.repeat(level)
   const nestedIndent = '  '.repeat(level + 1)
   const marker = orderedIndex !== null && preferences.preserveOrderedListNumber
-    ? `${orderedIndex}. `
-    : `${preferences.unorderedListBullet} `
+    ? `${orderedIndex}${formatOrderedListSuffix(preferences.orderedListSuffix)} `
+    : `${formatListBullet(preferences.unorderedListBullet)} `
   const lines: string[] = []
   let hasLeadingLine = false
 
@@ -180,14 +177,15 @@ function renderCodeBlock(node: Code, preferences: OutputPreferences): string {
     return ''
   }
 
-  const label = node.lang ? `[代码块: ${node.lang}]` : '[代码块]'
+  const label = normalizeLabel(preferences.codeBlockLabel, '代码块')
+  const blockTitle = node.lang ? `[${label}: ${node.lang}]` : `[${label}]`
   const value = node.value.trimEnd()
 
-  return value ? `${label}\n${value}` : label
+  return value ? `${blockTitle}\n${value}` : blockTitle
 }
 
 function renderTable(node: Table, preferences: OutputPreferences): string {
-  const separator = tableSeparatorMap[preferences.tableSeparator]
+  const separator = resolveSeparator(preferences.tableSeparator)
 
   return node.children
     .map((row) => renderTableRow(row, preferences, separator))
@@ -266,7 +264,14 @@ function renderImage(node: Image, preferences?: OutputPreferences): string {
     return ''
   }
 
-  return node.alt?.trim() ? `图片：${node.alt.trim()}` : '图片'
+  const alt = node.alt?.trim()
+  const label = preferences.imageLabel.trim()
+
+  if (!alt) {
+    return label.replace(/[:：\s]+$/g, '') || '图片'
+  }
+
+  return label ? joinLabelAndValue(label, alt) : alt
 }
 
 function renderInlineCode(node: InlineCode): string {
@@ -278,6 +283,10 @@ function renderBreak(_: Break): string {
 }
 
 function prefixLines(value: string, prefix: string): string {
+  if (!prefix) {
+    return value
+  }
+
   return value
     .split('\n')
     .map((line) => line ? `${prefix}${line}` : prefix.trimEnd())
@@ -291,4 +300,49 @@ function normalizeInlineText(value: string): string {
     .replace(/\n[ \t]+/g, '\n')
     .replace(/[ \t]{2,}/g, ' ')
     .trim()
+}
+
+function resolveBlockGap(value: string): string {
+  const normalized = value.trim().toLowerCase()
+  const parsed = Number.parseInt(normalized, 10)
+  const count = Number.isFinite(parsed)
+    ? clamp(parsed + 1, 2, 6)
+    : (blockGapAliasMap[normalized] ?? blockGapAliasMap.normal)
+
+  return '\n'.repeat(count)
+}
+
+function resolveSeparator(value: string): string {
+  return decodeEscapes(value) || ' | '
+}
+
+function formatListBullet(value: string): string {
+  return decodeEscapes(value).trim() || '-'
+}
+
+function formatOrderedListSuffix(value: string): string {
+  return decodeEscapes(value) || '.'
+}
+
+function normalizeLabel(value: string, fallback: string): string {
+  return value.trim() || fallback
+}
+
+function joinLabelAndValue(label: string, value: string): string {
+  if (/[：:>\]\)\s]$/.test(label)) {
+    return `${label}${value}`
+  }
+
+  return `${label} ${value}`
+}
+
+function decodeEscapes(value: string): string {
+  return value
+    .replace(/\\t/g, '\t')
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\r')
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
 }

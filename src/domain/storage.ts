@@ -5,8 +5,12 @@ export const OUTPUT_PREFERENCES_STORAGE_VERSION = 1
 
 export const defaultOutputPreferences: OutputPreferences = {
   unorderedListBullet: '-',
-  tableSeparator: 'pipe',
+  orderedListSuffix: '.',
+  tableSeparator: ' | ',
   paragraphSpacing: 'normal',
+  quotePrefix: '> ',
+  imageLabel: '图片：',
+  codeBlockLabel: '代码块',
   preserveOrderedListNumber: true,
   preserveLinkUrl: true,
   preserveImageAlt: true,
