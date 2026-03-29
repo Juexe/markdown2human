@@ -6,7 +6,6 @@ import {
   Heading,
   ListTree,
   Quote,
-  RotateCcw,
   Settings2,
   Sparkles,
 } from 'lucide-vue-next'
@@ -15,7 +14,6 @@ import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
@@ -365,27 +363,20 @@ function labelClass() {
           </h1>
         </header>
 
-        <Card class="border-white/70 bg-white/86 shadow-sm backdrop-blur">
-          <CardHeader class="gap-3">
-            <div class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+        <Card class="border-white/70 bg-white/86 shadow-sm backdrop-blur pb-6">
+          <CardHeader class="gap-2 py-0">
+            <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="space-y-1">
                 <CardTitle class="flex items-center gap-2 text-sm font-semibold">
                   <Sparkles class="size-4 text-muted-foreground" />
                   快速设置
                 </CardTitle>
-                <CardDescription class="text-xs leading-5">
-                  高频设置直接放在工作台上，适合边看结果边微调。更细的标题样式、媒体标签和保留策略统一放在高级面板里。
-                </CardDescription>
               </div>
               <div class="flex flex-wrap items-center gap-2">
-                <p class="text-xs leading-5 text-muted-foreground">已偏离默认设置 {{ changedPreferencesCount }} 项</p>
+                <p class="text-xs leading-5 text-muted-foreground">已调整 {{ changedPreferencesCount }} 项</p>
                 <Button size="sm" variant="outline" @click="settingsDialogOpen = true">
                   <Settings2 />
                   高级设置
-                </Button>
-                <Button :disabled="isDefaultPreferences" size="sm" variant="ghost" @click="restoreDefaultPreferences">
-                  <RotateCcw />
-                  恢复默认
                 </Button>
               </div>
             </div>
@@ -448,13 +439,10 @@ function labelClass() {
 
         <section class="grid flex-1 gap-4 xl:grid-cols-2">
           <Card class="flex min-h-[30rem] flex-col border-white/70 bg-white/88 shadow-sm backdrop-blur">
-            <CardHeader class="gap-2 py-4">
+            <CardHeader class="gap-2 py-0">
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <div class="space-y-1">
                   <CardTitle class="text-sm font-semibold">Markdown</CardTitle>
-                  <CardDescription class="text-xs leading-5">
-                    支持直接粘贴、打开本地文件，输入越长越能看出设置项的效果。
-                  </CardDescription>
                 </div>
                 <div class="flex gap-2">
                   <Button variant="outline" size="sm" @click="localFile.openFileDialog">
@@ -484,13 +472,10 @@ function labelClass() {
           </Card>
 
           <Card class="flex min-h-[30rem] flex-col border-white/70 bg-[#f8f7f3]/92 shadow-sm backdrop-blur">
-            <CardHeader class="gap-2 py-4">
+            <CardHeader class="gap-2 py-0">
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <div class="space-y-1">
                   <CardTitle class="text-sm font-semibold">转换结果</CardTitle>
-                  <CardDescription class="text-xs leading-5">
-                    右侧结果会实时响应设置变化，适合边调规则边确认最终纯文本观感。
-                  </CardDescription>
                 </div>
                 <Button size="sm" @click="copyText(outputText)">
                   {{ copyButtonLabel }}
@@ -524,14 +509,23 @@ function labelClass() {
 
       <DialogScrollContent class="max-w-6xl border-white/70 bg-[#fbfaf6] p-0 shadow-2xl">
         <DialogHeader class="shrink-0 border-b border-border/60 bg-white/88 px-6 py-5 backdrop-blur">
-          <div class="space-y-2">
-            <DialogTitle class="flex items-center gap-2 text-base font-semibold">
-              <Settings2 class="size-4" />
-              输出设置
-            </DialogTitle>
-            <DialogDescription class="max-w-3xl text-sm leading-6">
-              这里放完整的输出规则。主界面只展示最常改的几个入口，其余细节按标题、结构和媒体格式分组管理，方便后续继续扩展。
-            </DialogDescription>
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="space-y-2">
+              <DialogTitle class="flex items-center gap-2 text-base font-semibold">
+                <Settings2 class="size-4" />
+                输出设置
+              </DialogTitle>
+              <DialogDescription class="max-w-3xl text-sm leading-6">
+                这里放完整的输出规则。主界面只展示最常改的几个入口，其余细节按标题、结构和媒体格式分组管理，方便后续继续扩展。
+              </DialogDescription>
+            </div>
+
+            <div class="flex shrink-0 items-center gap-2">
+              <p class="text-xs leading-5 text-muted-foreground">已调整 {{ changedPreferencesCount }} 项</p>
+              <Button :disabled="isDefaultPreferences" size="sm" variant="outline" @click="restoreDefaultPreferences">
+                恢复默认
+              </Button>
+            </div>
           </div>
         </DialogHeader>
 
