@@ -132,11 +132,6 @@ const tableRenderModeOptions = [
     description: '按 表头:值 展开，最适合聊天转发。',
   },
   {
-    value: 'lead',
-    label: '首列主语',
-    description: '第一列作为主语，后续列转成键值对。',
-  },
-  {
     value: 'dsl',
     label: '自定义 DSL',
     description: '按模板完全自定义每一行的结构。',
@@ -145,16 +140,20 @@ const tableRenderModeOptions = [
 
 const tableDslExamples = [
   '{pairs}',
-  '{col:1}{if:2}：{pairs:2..|， | = }{end}',
+  '{col:1}{cols:2..}',
   '{if:备注}备注：{col:备注}{end}',
 ] as const
 
 const settingHints = {
   unorderedListBullet: '无序列表项使用的前导符号，例如 -, *, •。',
   tableSeparator: '简单分列模式和 DSL 中 {cols} 使用的列分隔内容，可直接输入空格、逗号或 \\t。',
+  tableFirstColumnSeparator: '第 1 列和后续列之间专用的分隔内容，优先级高于列分隔，留空则表示首列后不插入任何分隔。',
   tableRenderMode: '普通用户直接选择预设；切到自定义 DSL 后可以自己决定每一行怎么组织。',
-  tablePairSeparator: '预设键值对、首列主语，以及 DSL 中 {pairs} 默认使用的项间分隔符。',
-  tableKeyValueSeparator: '表头和单元格值之间的连接符，预设和 DSL 中 {kv}/{pairs} 默认使用它。',
+  tablePairSeparator: '键值对预设，以及 DSL 中 {pairs} 默认使用的项间分隔符。',
+  tableKeyPrefix: '输出键名前追加的内容，例如 【 或 ( 。',
+  tableKeySuffix: '输出键名后追加的内容，例如 ：、】 或 = 。',
+  tableValuePrefix: '输出值前追加的内容，例如 空格、【 或 ( 。',
+  tableValueSuffix: '输出值后追加的内容，例如 】、) 或 。',
   tableRowSuffix: '每一行渲染完成后追加的尾部内容，例如 。、； 或 \\n。',
   tableUseHeaderRow: '开启后用表格第一行当表头，关闭后自动生成 列1、列2、列3。',
   tableSkipEmptyCells: '开启后会忽略空单元格，避免输出残缺的 键: 值 片段。',
@@ -636,6 +635,20 @@ function labelClass() {
                   </div>
 
                   <div class="space-y-1.5">
+                    <Label for="table-first-column-separator" :class="labelClass()">
+                      <span>首列分隔</span>
+                      <SettingHint :text="settingHints.tableFirstColumnSeparator" />
+                    </Label>
+                    <Input
+                      id="table-first-column-separator"
+                      v-model="preferences.tableFirstColumnSeparator"
+                      class="h-9 bg-background/80 font-mono"
+                      placeholder=" | "
+                      spellcheck="false"
+                    />
+                  </div>
+
+                  <div class="space-y-1.5">
                     <Label for="table-pair-separator" :class="labelClass()">
                       <span>项间分隔</span>
                       <SettingHint :text="settingHints.tablePairSeparator" />
@@ -650,20 +663,6 @@ function labelClass() {
                   </div>
 
                   <div class="space-y-1.5">
-                    <Label for="table-key-value-separator" :class="labelClass()">
-                      <span>键值分隔</span>
-                      <SettingHint :text="settingHints.tableKeyValueSeparator" />
-                    </Label>
-                    <Input
-                      id="table-key-value-separator"
-                      v-model="preferences.tableKeyValueSeparator"
-                      class="h-9 bg-background/80 font-mono"
-                      placeholder="："
-                      spellcheck="false"
-                    />
-                  </div>
-
-                  <div class="space-y-1.5">
                     <Label for="table-row-suffix" :class="labelClass()">
                       <span>行末分隔</span>
                       <SettingHint :text="settingHints.tableRowSuffix" />
@@ -673,6 +672,62 @@ function labelClass() {
                       v-model="preferences.tableRowSuffix"
                       class="h-9 bg-background/80 font-mono"
                       placeholder="。"
+                      spellcheck="false"
+                    />
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <Label for="table-key-prefix" :class="labelClass()">
+                      <span>键前缀</span>
+                      <SettingHint :text="settingHints.tableKeyPrefix" />
+                    </Label>
+                    <Input
+                      id="table-key-prefix"
+                      v-model="preferences.tableKeyPrefix"
+                      class="h-9 bg-background/80 font-mono"
+                      placeholder=""
+                      spellcheck="false"
+                    />
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <Label for="table-key-suffix" :class="labelClass()">
+                      <span>键后缀</span>
+                      <SettingHint :text="settingHints.tableKeySuffix" />
+                    </Label>
+                    <Input
+                      id="table-key-suffix"
+                      v-model="preferences.tableKeySuffix"
+                      class="h-9 bg-background/80 font-mono"
+                      placeholder="："
+                      spellcheck="false"
+                    />
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <Label for="table-value-prefix" :class="labelClass()">
+                      <span>值前缀</span>
+                      <SettingHint :text="settingHints.tableValuePrefix" />
+                    </Label>
+                    <Input
+                      id="table-value-prefix"
+                      v-model="preferences.tableValuePrefix"
+                      class="h-9 bg-background/80 font-mono"
+                      placeholder=""
+                      spellcheck="false"
+                    />
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <Label for="table-value-suffix" :class="labelClass()">
+                      <span>值后缀</span>
+                      <SettingHint :text="settingHints.tableValueSuffix" />
+                    </Label>
+                    <Input
+                      id="table-value-suffix"
+                      v-model="preferences.tableValueSuffix"
+                      class="h-9 bg-background/80 font-mono"
+                      placeholder=""
                       spellcheck="false"
                     />
                   </div>
@@ -723,7 +778,7 @@ function labelClass() {
                   </p>
                   <p class="text-xs leading-5 text-muted-foreground">
                     条件块：<code class="rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{if:备注}...{end}</code>
-                    ，重写分隔符：<code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{pairs:2..|， | = }</code>
+                    ，局部改项间分隔：<code class="ml-1 rounded bg-white/80 px-1 py-0.5 text-[11px] text-foreground">{pairs:2..|； }</code>
                   </p>
                   <p class="text-xs leading-5 text-muted-foreground">
                     例子：
