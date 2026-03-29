@@ -2,7 +2,6 @@
 import { computed, ref, watch } from 'vue'
 import type { OutputPreferences } from '@/types/preferences'
 import {
-  CircleHelp,
   FolderOpen,
   Heading,
   ListTree,
@@ -11,6 +10,7 @@ import {
   Settings2,
   Sparkles,
 } from 'lucide-vue-next'
+import SettingHint from '@/components/SettingHint.vue'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -356,7 +356,7 @@ function labelClass() {
             <div class="space-y-1.5 rounded-xl border border-border/70 bg-background/75 p-3">
               <Label for="quick-paragraph-spacing" :class="labelClass()">
                 <span>段落间距</span>
-                <CircleHelp class="size-3.5" :title="settingHints.paragraphSpacing" />
+                <SettingHint :text="settingHints.paragraphSpacing" />
               </Label>
               <Select v-model="preferences.paragraphSpacing">
                 <SelectTrigger id="quick-paragraph-spacing" class="h-9 bg-white/70 text-xs">
@@ -373,7 +373,7 @@ function labelClass() {
             <div class="space-y-1.5 rounded-xl border border-border/70 bg-background/75 p-3">
               <Label for="quick-unordered-list-bullet" :class="labelClass()">
                 <span>列表符号</span>
-                <CircleHelp class="size-3.5" :title="settingHints.unorderedListBullet" />
+                <SettingHint :text="settingHints.unorderedListBullet" />
               </Label>
               <Input
                 id="quick-unordered-list-bullet"
@@ -388,7 +388,7 @@ function labelClass() {
               <div class="min-w-0 space-y-1">
                 <p class="flex items-center gap-1 text-xs font-medium text-foreground">
                   <span>链接地址</span>
-                  <CircleHelp class="size-3.5 shrink-0 text-muted-foreground" :title="settingHints.preserveLinkUrl" />
+                  <SettingHint :text="settingHints.preserveLinkUrl" />
                 </p>
                 <p class="text-xs leading-5 text-muted-foreground">转发时是否保留原始 URL</p>
               </div>
@@ -399,7 +399,7 @@ function labelClass() {
               <div class="min-w-0 space-y-1">
                 <p class="flex items-center gap-1 text-xs font-medium text-foreground">
                   <span>代码块</span>
-                  <CircleHelp class="size-3.5 shrink-0 text-muted-foreground" :title="settingHints.preserveCodeBlock" />
+                  <SettingHint :text="settingHints.preserveCodeBlock" />
                 </p>
                 <p class="text-xs leading-5 text-muted-foreground">控制代码块整段是否输出</p>
               </div>
@@ -514,7 +514,7 @@ function labelClass() {
                 <div class="space-y-1.5 rounded-xl border border-border/70 bg-white/78 p-3 xl:col-span-1">
                   <Label for="paragraph-spacing" :class="labelClass()">
                     <span>段落间距</span>
-                    <CircleHelp class="size-3.5" :title="settingHints.paragraphSpacing" />
+                    <SettingHint :text="settingHints.paragraphSpacing" />
                   </Label>
                   <Select v-model="preferences.paragraphSpacing">
                     <SelectTrigger id="paragraph-spacing" class="h-9 bg-background/80 text-xs">
@@ -535,7 +535,7 @@ function labelClass() {
                 >
                   <Label :for="field.id" :class="labelClass()">
                     <span>{{ field.label }}</span>
-                    <CircleHelp class="size-3.5" :title="field.hint" />
+                    <SettingHint :text="field.hint" />
                   </Label>
                   <Input
                     :id="field.id"
@@ -556,7 +556,7 @@ function labelClass() {
                   <div class="min-w-0 space-y-1">
                     <p class="flex items-center gap-1 text-xs font-medium text-foreground">
                       <span>{{ field.label }}</span>
-                      <CircleHelp class="size-3.5 shrink-0 text-muted-foreground" :title="field.hint" />
+                      <SettingHint :text="field.hint" />
                     </p>
                     <p class="text-xs leading-5 text-muted-foreground">{{ field.description }}</p>
                   </div>
@@ -587,7 +587,7 @@ function labelClass() {
                   <div class="space-y-1">
                     <p class="flex items-center gap-1 text-sm font-semibold text-foreground">
                       <span>{{ group.title }}</span>
-                      <CircleHelp class="size-3.5 text-muted-foreground" :title="group.hint" />
+                      <SettingHint :text="group.hint" class="size-5" />
                     </p>
                     <p class="text-xs leading-5 text-muted-foreground">{{ group.description }}</p>
                   </div>
@@ -640,7 +640,7 @@ function labelClass() {
                 >
                   <Label :for="field.id" :class="labelClass()">
                     <span>{{ field.label }}</span>
-                    <CircleHelp class="size-3.5" :title="field.hint" />
+                    <SettingHint :text="field.hint" />
                   </Label>
                   <Input
                     :id="field.id"
