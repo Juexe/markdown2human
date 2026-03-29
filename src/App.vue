@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { RotateCcw } from 'lucide-vue-next'
+import { ChevronDown, RotateCcw } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -26,6 +27,7 @@ import { defaultOutputPreferences } from '@/domain/storage'
 
 const markdownSource = ref('')
 const outputText = ref('')
+const showAdvancedSettings = ref(false)
 const pasteState = ref<'idle' | 'success' | 'error'>('idle')
 const pasteMessage = ref('')
 let pasteResetTimer: number | undefined
@@ -44,23 +46,18 @@ watch(
   },
 )
 
-const listBulletOptions = [
-  { label: '- 短横线', value: '-' },
-  { label: '* 星号', value: '*' },
-  { label: '• 圆点', value: '•' },
-] as const
-
-const tableSeparatorOptions = [
-  { label: '竖线分隔', value: 'pipe' },
-  { label: '空格分隔', value: 'space' },
-  { label: 'Tab 分隔', value: 'tab' },
-] as const
-
+const unorderedListBulletSuggestions = ['-', '*', '•', '·', '→', '✓']
+const orderedListSuffixSuggestions = ['.', ')', '、', ':', '-']
+const tableSeparatorSuggestions = [' | ', '  ', '\\t', ', ', ' ｜ ', ' / ']
 const paragraphSpacingOptions = [
   { label: '紧凑', value: 'compact' },
   { label: '标准', value: 'normal' },
   { label: '宽松', value: 'relaxed' },
+  { label: '更宽', value: 'wide' },
 ] as const
+const quotePrefixSuggestions = ['> ', '｜ ', '引用：', '// ', '※ ']
+const imageLabelSuggestions = ['图片：', '图：', 'Image:', 'Alt:', '']
+const codeBlockLabelSuggestions = ['代码块', '代码', 'Snippet', 'Code', '源码']
 
 const isDefaultPreferences = computed(
   () => JSON.stringify(preferences.value) === JSON.stringify(defaultOutputPreferences),
@@ -162,46 +159,32 @@ function restoreDefaultPreferences() {
               <span class="h-4 w-px shrink-0 bg-border" />
 
               <div class="flex shrink-0 items-center gap-2">
-                <Label for="unordered-list-bullet" class="shrink-0 text-xs text-muted-foreground">列表</Label>
-                <Select v-model="preferences.unorderedListBullet">
-                  <SelectTrigger id="unordered-list-bullet" class="h-8 w-28">
-                    <SelectValue placeholder="列表" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem
-                      v-for="option in listBulletOptions"
-                      :key="option.value"
-                      :value="option.value"
-                    >
-                      {{ option.label }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label for="unordered-list-bullet" class="shrink-0 text-xs text-muted-foreground">列表符号</Label>
+                <Input
+                  id="unordered-list-bullet"
+                  v-model="preferences.unorderedListBullet"
+                  class="h-8 w-20 bg-white/70 font-mono"
+                  list="unordered-list-bullet-suggestions"
+                  spellcheck="false"
+                />
               </div>
 
               <div class="flex shrink-0 items-center gap-2">
-                <Label for="table-separator" class="shrink-0 text-xs text-muted-foreground">表格</Label>
-                <Select v-model="preferences.tableSeparator">
-                  <SelectTrigger id="table-separator" class="h-8 w-28">
-                    <SelectValue placeholder="表格" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem
-                      v-for="option in tableSeparatorOptions"
-                      :key="option.value"
-                      :value="option.value"
-                    >
-                      {{ option.label }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label for="table-separator" class="shrink-0 text-xs text-muted-foreground">表格分隔</Label>
+                <Input
+                  id="table-separator"
+                  v-model="preferences.tableSeparator"
+                  class="h-8 w-24 bg-white/70 font-mono"
+                  list="table-separator-suggestions"
+                  spellcheck="false"
+                />
               </div>
 
               <div class="flex shrink-0 items-center gap-2">
-                <Label for="paragraph-spacing" class="shrink-0 text-xs text-muted-foreground">段落</Label>
+                <Label for="paragraph-spacing" class="shrink-0 text-xs text-muted-foreground">段落间距</Label>
                 <Select v-model="preferences.paragraphSpacing">
-                  <SelectTrigger id="paragraph-spacing" class="h-8 w-24">
-                    <SelectValue placeholder="段落" />
+                  <SelectTrigger id="paragraph-spacing" class="h-8 w-24 bg-white/70 text-xs">
+                    <SelectValue placeholder="段落间距" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem
@@ -225,17 +208,16 @@ function restoreDefaultPreferences() {
                 <Switch v-model="preferences.preserveLinkUrl" />
               </label>
 
-              <label class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2.5 py-1.5">
-                <p class="truncate text-xs font-medium">图片说明</p>
-                <Switch v-model="preferences.preserveImageAlt" />
-              </label>
-
-              <label class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2.5 py-1.5">
-                <p class="truncate text-xs font-medium">代码块</p>
-                <Switch v-model="preferences.preserveCodeBlock" />
-              </label>
-
               <div class="min-w-4 flex-1" />
+
+              <Button
+                size="sm"
+                variant="outline"
+                @click="showAdvancedSettings = !showAdvancedSettings"
+              >
+                高级设置
+                <ChevronDown class="transition-transform" :class="showAdvancedSettings ? 'rotate-180' : ''" />
+              </Button>
 
               <Button
                 :disabled="isDefaultPreferences"
@@ -248,6 +230,107 @@ function restoreDefaultPreferences() {
                 <span class="sr-only">恢复默认设置</span>
               </Button>
             </div>
+          </div>
+
+          <div v-if="showAdvancedSettings" class="overflow-x-auto border-t border-border/70 pt-2">
+            <div class="flex min-w-max items-center gap-3">
+              <div class="flex shrink-0 items-center gap-2">
+                <Label for="ordered-list-suffix" class="shrink-0 text-xs text-muted-foreground">编号后缀</Label>
+                <Input
+                  id="ordered-list-suffix"
+                  v-model="preferences.orderedListSuffix"
+                  class="h-8 w-20 bg-white/70 font-mono"
+                  list="ordered-list-suffix-suggestions"
+                  spellcheck="false"
+                />
+              </div>
+
+              <div class="flex shrink-0 items-center gap-2">
+                <Label for="quote-prefix" class="shrink-0 text-xs text-muted-foreground">引用前缀</Label>
+                <Input
+                  id="quote-prefix"
+                  v-model="preferences.quotePrefix"
+                  class="h-8 w-24 bg-white/70 font-mono"
+                  list="quote-prefix-suggestions"
+                  spellcheck="false"
+                />
+              </div>
+
+              <div class="flex shrink-0 items-center gap-2">
+                <Label for="image-label" class="shrink-0 text-xs text-muted-foreground">图片标签</Label>
+                <Input
+                  id="image-label"
+                  v-model="preferences.imageLabel"
+                  class="h-8 w-24 bg-white/70 font-mono"
+                  list="image-label-suggestions"
+                  spellcheck="false"
+                />
+              </div>
+
+              <div class="flex shrink-0 items-center gap-2">
+                <Label for="code-block-label" class="shrink-0 text-xs text-muted-foreground">代码标签</Label>
+                <Input
+                  id="code-block-label"
+                  v-model="preferences.codeBlockLabel"
+                  class="h-8 w-24 bg-white/70 font-mono"
+                  list="code-block-label-suggestions"
+                  spellcheck="false"
+                />
+              </div>
+
+              <label class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2.5 py-1.5">
+                <p class="truncate text-xs font-medium">图片说明</p>
+                <Switch v-model="preferences.preserveImageAlt" />
+              </label>
+
+              <label class="flex shrink-0 items-center gap-2 rounded-md border bg-background/70 px-2.5 py-1.5">
+                <p class="truncate text-xs font-medium">代码块</p>
+                <Switch v-model="preferences.preserveCodeBlock" />
+              </label>
+            </div>
+
+            <datalist id="unordered-list-bullet-suggestions">
+              <option
+                v-for="option in unorderedListBulletSuggestions"
+                :key="option"
+                :value="option"
+              />
+            </datalist>
+            <datalist id="ordered-list-suffix-suggestions">
+              <option
+                v-for="option in orderedListSuffixSuggestions"
+                :key="option"
+                :value="option"
+              />
+            </datalist>
+            <datalist id="table-separator-suggestions">
+              <option
+                v-for="option in tableSeparatorSuggestions"
+                :key="option"
+                :value="option"
+              />
+            </datalist>
+            <datalist id="quote-prefix-suggestions">
+              <option
+                v-for="option in quotePrefixSuggestions"
+                :key="option"
+                :value="option"
+              />
+            </datalist>
+            <datalist id="image-label-suggestions">
+              <option
+                v-for="option in imageLabelSuggestions"
+                :key="option"
+                :value="option"
+              />
+            </datalist>
+            <datalist id="code-block-label-suggestions">
+              <option
+                v-for="option in codeBlockLabelSuggestions"
+                :key="option"
+                :value="option"
+              />
+            </datalist>
           </div>
         </CardContent>
       </Card>
